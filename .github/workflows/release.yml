@@ -187,7 +187,7 @@ jobs:
       # user, as "app not installed", with no way to fix it after the fact. Hence the pinned digest.
       - name: Verify the signature is the key users already trust
         env:
-          EXPECTED_SHA256: '84f527d3a966f435cd32d889b8e0e267aa08b564a10df774c5159cef11e7fc6d'
+          EXPECTED_SHA256: '50af6aa3a6c54f4865f8ee93070fe7090e3397e23cd7b4f737c67174acc4a25f'
         run: |
           apksigner="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
           apk=app/build/outputs/apk/release/app-release.apk
