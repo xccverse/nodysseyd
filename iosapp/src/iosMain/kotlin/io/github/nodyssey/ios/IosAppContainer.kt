@@ -82,6 +82,7 @@ import io.github.nodyssey.data.proxy.ProxyType
 import io.github.nodyssey.data.proxy.routes
 import io.github.nodyssey.data.security.LegacySecretMigration
 import io.github.nodyssey.data.security.PlaintextSecretCipher
+import io.github.nodyssey.data.session.AccountRepository
 import io.github.nodyssey.data.session.AccountSignOut
 import io.github.nodyssey.data.session.DefaultAccountSignOut
 import io.github.nodyssey.data.session.NodeSeekSignInRepository
@@ -529,14 +530,23 @@ class IosAppContainer(
     override val sessionRepository: SessionRepository by lazy { SessionRepository(sessionCookies) }
 
     override val accountSignOut: AccountSignOut by lazy {
-        DefaultAccountSignOut(
-            posts = postRepository,
+        DefaultAccountSignOut(accounts = accountRepository)
+    }
+
+    override val accountRepository: AccountRepository by lazy {
+        AccountRepository(
+            dao = database.accountDao(),
+            cookies = sessionCookies,
+            session = sessionRepository,
+            signIn = signInRepository,
             profiles = profileRepository,
+            cipher = secretCipher,
+            clock = clock,
+            posts = postRepository,
             offline = offlineLibrary,
             postDrafts = postComposerRepository,
             commentDrafts = commentComposerRepository,
             settings = settingsRepository,
-            session = sessionRepository,
         )
     }
 
