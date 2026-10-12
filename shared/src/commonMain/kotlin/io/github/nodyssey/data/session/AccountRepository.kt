@@ -364,7 +364,6 @@ class AccountRepository(
         val encrypted =
             when (password) {
                 is SetPassword.To -> if (password.value.isNotEmpty()) cipher.encrypt(password.value).orEmpty() else ""
-
                 is SetPassword.Keep -> dao.session(accountId)?.encryptedPassword ?: ""
             }
         dao.upsertSession(
