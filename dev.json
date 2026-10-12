@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "channel": "dev",
+  "versionName": "1.2.23-dev.1",
+  "tag": "v1.2.23-dev.1",
+  "publishedOn": "2026-10-12",
+  "notes": "测试版，由 tag `v1.2.23-dev.1` 构建。不是正式版本，可能不稳定。",
+  "apk": {
+    "name": "nodyssey-v1.2.23-dev.1.apk",
+    "url": "https://github.com/xccverse/nodysseyd/releases/download/v1.2.23-dev.1/nodyssey-v1.2.23-dev.1.apk",
+    "sizeBytes": 6285163,
+    "sha256": "f4dbf65f9733bde57d323779cfc40e947c750164e450aed514361ec076ef5d45"
+  },
+  "releaseUrl": "https://github.com/xccverse/nodysseyd/releases/tag/v1.2.23-dev.1"
+}
