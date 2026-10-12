@@ -1607,4 +1607,15 @@
     <string name="sticker_image_open">Open in browser</string>
     <string name="sticker_image_link_copied">Image link copied</string>
     <!-- sticker:end -->
+    <!-- account-switch:start -->
+    <string name="account_switch_title">Switch account</string>
+    <string name="account_switch_subtitle">Each account keeps its own sign-in state</string>
+    <string name="account_switch_add">Add account</string>
+    <string name="account_switch_expired">Session expired</string>
+    <string name="account_switch_relogin">Sign in again</string>
+    <string name="account_switch_switching">Switching…</string>
+    <string name="account_switch_delete">Delete</string>
+    <string name="account_switch_delete_title">Delete account?</string>
+    <string name="account_switch_delete_body">This clears %1$s\'s local sign-in state and removes the account from the list.</string>
+    <!-- account-switch:end -->
 </resources>

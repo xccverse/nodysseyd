@@ -1875,4 +1875,15 @@
     <string name="sticker_image_open">在浏览器打开</string>
     <string name="sticker_image_link_copied">已复制图片链接</string>
     <!-- sticker:end -->
+    <!-- account-switch:start -->
+    <string name="account_switch_title">切换账号</string>
+    <string name="account_switch_subtitle">每个账号的登录状态独立保存</string>
+    <string name="account_switch_add">添加账号</string>
+    <string name="account_switch_expired">登录已过期</string>
+    <string name="account_switch_relogin">重新登录</string>
+    <string name="account_switch_switching">切换中…</string>
+    <string name="account_switch_delete">删除</string>
+    <string name="account_switch_delete_title">删除账号？</string>
+    <string name="account_switch_delete_body">会清除 %1$s 在本机的登录状态，这个账号会从列表移除。</string>
+    <!-- account-switch:end -->
 </resources>

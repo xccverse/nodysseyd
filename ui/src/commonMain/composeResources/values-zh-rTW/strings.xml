@@ -1599,4 +1599,15 @@
     <string name="sticker_image_open">在瀏覽器開啟</string>
     <string name="sticker_image_link_copied">已複製圖片連結</string>
     <!-- sticker:end -->
+    <!-- account-switch:start -->
+    <string name="account_switch_title">切換帳號</string>
+    <string name="account_switch_subtitle">每個帳號的登入狀態獨立保存</string>
+    <string name="account_switch_add">新增帳號</string>
+    <string name="account_switch_expired">登入已過期</string>
+    <string name="account_switch_relogin">重新登入</string>
+    <string name="account_switch_switching">切換中…</string>
+    <string name="account_switch_delete">刪除</string>
+    <string name="account_switch_delete_title">刪除帳號？</string>
+    <string name="account_switch_delete_body">會清除 %1$s 在本機的登入狀態，這個帳號會從列表移除。</string>
+    <!-- account-switch:end -->
 </resources>

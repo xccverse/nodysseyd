@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -162,6 +163,8 @@ fun ProfileRoute(
      * carries a way out to a real browser, where a pass earned is a pass the app cannot see.
      */
     onVerify: (String) -> Unit,
+    /** 多账号切换器 —— 身份行右边的 SwapHoriz 按钮。 */
+    onSwitchAccount: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -174,6 +177,7 @@ fun ProfileRoute(
         hasAppUpdate = hasAppUpdate,
         onOpenWebsite = onOpenWebsite,
         onVerify = onVerify,
+        onSwitchAccount = onSwitchAccount,
         onAttendance = viewModel::requestAttendance,
         onSignInForToday = viewModel::signInForToday,
         onDismissAttendanceChooser = viewModel::dismissAttendanceChooser,
@@ -238,6 +242,8 @@ fun ProfileScreen(
     onVerify: (String) -> Unit,
     onAttendance: () -> Unit,
     onAttendanceBoard: () -> Unit,
+    /** 多账号切换器 —— 身份行右边的 SwapHoriz 按钮。 */
+    onSwitchAccount: () -> Unit,
     modifier: Modifier = Modifier,
     /** 应用内更新 found something; the gear in the app bar carries the dot that leads to it. */
     hasAppUpdate: Boolean = false,
@@ -329,6 +335,7 @@ fun ProfileScreen(
                     onCredit = destinations.credit,
                     onStardust = destinations.stardust,
                     onAssets = destinations.assets,
+                    onSwitchAccount = onSwitchAccount,
                 )
             }
             item(key = "attendance") {
@@ -397,13 +404,14 @@ private fun AccountCard(
     onCredit: () -> Unit,
     onStardust: () -> Unit,
     onAssets: () -> Unit,
+    onSwitchAccount: () -> Unit,
 ) {
     LayerCard(
         shape = MaterialTheme.shapes.largeIncreased,
         contentPadding = PaddingValues(14.dp),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        IdentityRow(state, onOpenSpace)
+        IdentityRow(state, onOpenSpace, onSwitchAccount)
         Row(horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween)) {
             val scheme = MaterialTheme.colorScheme
             val balances =
@@ -485,6 +493,7 @@ private val BALANCE_MIN_FONT_SIZE = 13.sp
 private fun IdentityRow(
     state: ProfileUiState,
     onOpenSpace: () -> Unit,
+    onSwitchAccount: () -> Unit,
 ) {
     // 头像和 ID 本身就是进空间的入口，右边再挂一个编辑按钮只是重复，去掉。
     Row(
@@ -522,6 +531,15 @@ private fun IdentityRow(
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        // 多账号切换 —— 放在箭头前面，点它开切换器，点行其他地方进空间。
+        IconButton(onClick = onSwitchAccount) {
+            Icon(
+                Icons.Default.SwapHoriz,
+                contentDescription = stringResource(Res.string.account_switch_title),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
             )
         }
         Icon(
@@ -916,6 +934,7 @@ private fun ProfileSignedInPreview() {
             onVerify = {},
             onAttendance = {},
             onAttendanceBoard = {},
+            onSwitchAccount = {},
         )
     }
 }
