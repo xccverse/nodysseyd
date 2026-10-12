@@ -38,13 +38,6 @@ import io.github.nodyssey.data.session.SessionRepository
 import io.github.nodyssey.data.session.SwitchResult
 import io.github.nodyssey.di.AppContainer
 import io.github.nodyssey.ui.common.PlazaSheet
-import io.github.plaza.designsys.component.UserAvatar
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import io.github.nodyssey.ui.resources.Res
 import io.github.nodyssey.ui.resources.account_switch_add
 import io.github.nodyssey.ui.resources.account_switch_delete
@@ -56,6 +49,13 @@ import io.github.nodyssey.ui.resources.account_switch_subtitle
 import io.github.nodyssey.ui.resources.account_switch_switching
 import io.github.nodyssey.ui.resources.account_switch_title
 import io.github.nodyssey.ui.resources.action_cancel
+import io.github.plaza.designsys.component.UserAvatar
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
 /** 账号切换器 BottomSheet 的 UI 状态。 */
