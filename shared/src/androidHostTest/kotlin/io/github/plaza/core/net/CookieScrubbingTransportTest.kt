@@ -1,12 +1,12 @@
 package io.github.plaza.core.net
 
 import io.github.nodyssey.core.NodeSeekSite
-import io.github.nodyssey.data.session.FakeSessionCookieStore
-import kotlinx.coroutines.test.runTest
+import io.github.nodyssey.data.doubles.session.FakeSessionCookieStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
 
 /**
  * The cookie under test is real: NodeSeek's `sortBy`, which a signed-out request must not carry —
