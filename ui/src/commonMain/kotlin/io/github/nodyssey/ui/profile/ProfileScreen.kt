@@ -27,7 +27,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -536,8 +536,8 @@ private fun IdentityRow(
         // 多账号切换 —— 放在箭头前面，点它开切换器，点行其他地方进空间。
         IconButton(onClick = onSwitchAccount) {
             Icon(
-                Icons.Filled.SwapHoriz,
-                contentDescription = stringResource(Res.string.account_switch_title),
+                Icons.Filled.AccountCircle,
+                contentDescription = "切换账号",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )
