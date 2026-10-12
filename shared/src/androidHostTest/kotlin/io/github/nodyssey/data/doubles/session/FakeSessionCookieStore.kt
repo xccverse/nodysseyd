@@ -1,4 +1,4 @@
-package io.github.nodyssey.data.session
+package io.github.nodyssey.data.doubles.session
 
 import io.github.plaza.core.net.SessionCookieStore
 

@@ -45,17 +45,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import nodyssey.ui.generated.resources.Res
-import nodyssey.ui.generated.resources.account_switch_add
-import nodyssey.ui.generated.resources.account_switch_delete
-import nodyssey.ui.generated.resources.account_switch_delete_body
-import nodyssey.ui.generated.resources.account_switch_delete_title
-import nodyssey.ui.generated.resources.account_switch_expired
-import nodyssey.ui.generated.resources.account_switch_relogin
-import nodyssey.ui.generated.resources.account_switch_subtitle
-import nodyssey.ui.generated.resources.account_switch_switching
-import nodyssey.ui.generated.resources.account_switch_title
-import nodyssey.ui.generated.resources.action_cancel
+import io.github.nodyssey.ui.resources.Res
+import io.github.nodyssey.ui.resources.account_switch_add
+import io.github.nodyssey.ui.resources.account_switch_delete
+import io.github.nodyssey.ui.resources.account_switch_delete_body
+import io.github.nodyssey.ui.resources.account_switch_delete_title
+import io.github.nodyssey.ui.resources.account_switch_expired
+import io.github.nodyssey.ui.resources.account_switch_relogin
+import io.github.nodyssey.ui.resources.account_switch_subtitle
+import io.github.nodyssey.ui.resources.account_switch_switching
+import io.github.nodyssey.ui.resources.account_switch_title
+import io.github.nodyssey.ui.resources.action_cancel
 import org.jetbrains.compose.resources.stringResource
 
 /** 账号切换器 BottomSheet 的 UI 状态。 */

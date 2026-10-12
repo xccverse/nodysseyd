@@ -536,7 +536,7 @@ private fun IdentityRow(
         // 多账号切换 —— 放在箭头前面，点它开切换器，点行其他地方进空间。
         IconButton(onClick = onSwitchAccount) {
             Icon(
-                Icons.Default.SwapHoriz,
+                Icons.Filled.SwapHoriz,
                 contentDescription = stringResource(Res.string.account_switch_title),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
@@ -961,6 +961,7 @@ private fun ProfileSignedOutPreview() {
             onVerify = {},
             onAttendance = {},
             onAttendanceBoard = {},
+            onSwitchAccount = {},
         )
     }
 }

@@ -16,6 +16,7 @@ import io.github.plaza.core.AppClock
 import io.github.plaza.core.net.SessionCookies
 import io.github.plaza.core.net.SiteError
 import io.github.plaza.core.net.SiteException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -46,7 +47,7 @@ class AccountRepositoryTest {
     private val cipher = FakeSecretCipher()
     private val clock = FakeClock()
 
-    private fun repository(): AccountRepository =
+    private fun repository(scope: CoroutineScope): AccountRepository =
         AccountRepository(
             dao = dao,
             cookies = cookies,
@@ -59,7 +60,7 @@ class AccountRepositoryTest {
             offline = NoOpOfflineLibrary(),
             postDrafts = NoOpPostComposer(),
             commentDrafts = NoOpCommentComposer(),
-            settings = SettingsRepository(testPreferenceStore(this, name = "account-test")),
+            settings = SettingsRepository(testPreferenceStore(scope, name = "account-test")),
         )
 
     private fun signInAs(uid: Long, name: String, cookieValue: String = "session-$uid") {
@@ -70,7 +71,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `adoptCurrentSession creates account and marks it active`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         signInAs(uid = 1001, name = "alice")
 
         repo.adoptCurrentSession(username = "alice", password = "secret")
@@ -87,7 +88,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `adoptCurrentSession with empty password stores no password`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         signInAs(uid = 1001, name = "alice")
 
         repo.adoptCurrentSession(username = "alice", password = "")
@@ -100,7 +101,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `switchTo moves session between accounts`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         // A 登录
         signInAs(uid = 1001, name = "alice", cookieValue = "session-alice")
         repo.adoptCurrentSession(username = "alice", password = "pw-a")
@@ -123,7 +124,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `switchTo same account returns AlreadyActive`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         signInAs(uid = 1001, name = "alice")
         repo.adoptCurrentSession(username = "alice", password = "pw")
 
@@ -134,7 +135,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `switchTo unknown account returns NoSuchAccount`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
 
         val result = repo.switchTo("uid-9999")
 
@@ -143,7 +144,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `switchTo expired snapshot with stored password does silent re-login`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         signInAs(uid = 1001, name = "alice", cookieValue = "session-alice")
         repo.adoptCurrentSession(username = "alice", password = "pw-a")
         signInAs(uid = 1002, name = "bob", cookieValue = "session-bob")
@@ -170,7 +171,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `switchTo expired snapshot without password returns SessionExpired`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         signInAs(uid = 1001, name = "alice", cookieValue = "session-alice")
         repo.adoptCurrentSession(username = "alice", password = "") // 没记住密码
         signInAs(uid = 1002, name = "bob", cookieValue = "session-bob")
@@ -188,7 +189,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `signOutCurrent clears session but keeps account`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         signInAs(uid = 1001, name = "alice")
         repo.adoptCurrentSession(username = "alice", password = "pw")
 
@@ -204,7 +205,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `removeAccount deletes account and session`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         signInAs(uid = 1001, name = "alice")
         repo.adoptCurrentSession(username = "alice", password = "pw")
         signInAs(uid = 1002, name = "bob")
@@ -221,7 +222,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `removeAccount of active account signs out`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         signInAs(uid = 1001, name = "alice")
         repo.adoptCurrentSession(username = "alice", password = "pw")
 
@@ -234,7 +235,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `migrateIfNeeded adopts existing session as first account`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         // 老用户：有登录态，但没有账号行
         signInAs(uid = 1001, name = "alice")
 
@@ -249,7 +250,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `migrateIfNeeded does nothing when already migrated`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         signInAs(uid = 1001, name = "alice")
         repo.adoptCurrentSession(username = "alice", password = "pw")
 
@@ -260,7 +261,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `checkpointActiveAccount saves snapshot without changing active`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         signInAs(uid = 1001, name = "alice", cookieValue = "session-alice-v1")
         repo.adoptCurrentSession(username = "alice", password = "pw")
         // 会话更新了（比如网页端刷新了 cookie）
@@ -275,7 +276,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `storedPassword decrypts remembered password`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         signInAs(uid = 1001, name = "alice")
         repo.adoptCurrentSession(username = "alice", password = "my-secret")
 
@@ -284,7 +285,7 @@ class AccountRepositoryTest {
 
     @Test
     fun `accountUsername returns username`() = runTest {
-        val repo = repository()
+        val repo = repository(backgroundScope)
         signInAs(uid = 1001, name = "alice")
         repo.adoptCurrentSession(username = "alice_login", password = "pw")
 
@@ -309,7 +310,7 @@ private class FakeProfileRepository : ProfileRepository {
     var failWithLoginRequired = false
 
     override suspend fun profile(refresh: Boolean): UserProfile {
-        if (failWithLoginRequired) throw SiteException(SiteError.LoginRequired, "login required")
+        if (failWithLoginRequired) throw SiteException(SiteError.LoginRequired, detail = "login required")
         return current
     }
 
