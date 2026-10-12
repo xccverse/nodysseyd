@@ -28,10 +28,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.nodyssey.data.session.Account
 import io.github.nodyssey.data.session.AccountRepository
 import io.github.nodyssey.data.session.SessionRepository
@@ -87,7 +87,9 @@ class AccountSwitcherViewModel(
             _uiState.update { it.copy(switchingId = accountId, switchError = null) }
             when (accounts.switchTo(accountId)) {
                 SwitchResult.Switched, SwitchResult.AlreadyActive -> onSwitched()
+
                 SwitchResult.NoSuchAccount -> Unit
+
                 is SwitchResult.SessionExpired ->
                     _uiState.update { it.copy(switchError = accountId) }
             }
