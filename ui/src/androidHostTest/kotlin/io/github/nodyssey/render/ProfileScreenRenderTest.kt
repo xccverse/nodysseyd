@@ -47,6 +47,7 @@ class ProfileScreenRenderTest {
                 onVerify = {},
                 onAttendance = {},
                 onAttendanceBoard = {},
+                onSwitchAccount = {},
             )
         }
     }

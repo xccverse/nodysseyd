@@ -1,7 +1,6 @@
 package io.github.nodyssey.data.session
 
 import io.github.nodyssey.core.NodeSeekSite
-import io.github.nodyssey.data.doubles.session.FakeSessionCookieStore
 import io.github.plaza.core.net.SessionCookieStore
 import io.github.plaza.core.net.SessionCookies
 import kotlinx.coroutines.delay

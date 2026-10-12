@@ -1,7 +1,6 @@
 package io.github.nodyssey.data.session
 
 import io.github.nodyssey.core.NodeSeekSite
-import io.github.nodyssey.data.doubles.session.FakeSessionCookieStore
 import io.github.plaza.core.net.SessionCookies
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

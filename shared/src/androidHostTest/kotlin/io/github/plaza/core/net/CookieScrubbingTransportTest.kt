@@ -1,7 +1,7 @@
 package io.github.plaza.core.net
 
 import io.github.nodyssey.core.NodeSeekSite
-import io.github.nodyssey.data.doubles.session.FakeSessionCookieStore
+import io.github.nodyssey.data.session.FakeSessionCookieStore
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

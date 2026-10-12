@@ -16,7 +16,6 @@ import io.github.nodyssey.data.composer.CommentSubmission
 import io.github.nodyssey.data.composer.PostComposerRepository
 import io.github.nodyssey.data.composer.PostDraft
 import io.github.nodyssey.data.composer.PostSubmission
-import io.github.nodyssey.data.doubles.session.FakeSessionCookieStore
 import io.github.nodyssey.data.settings.SettingsRepository
 import io.github.nodyssey.data.testPreferenceStore
 import io.github.plaza.core.AppClock
