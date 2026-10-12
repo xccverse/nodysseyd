@@ -39,8 +39,11 @@ import androidx.sqlite.execSQL
         MyStickerEntity::class,
         StickerRepoEntity::class,
         StickerFolderEntity::class,
+        AccountEntity::class,
+        AccountSessionEntity::class,
+        ActiveAccountEntity::class,
     ],
-    version = 20,
+    version = 21,
     exportSchema = true,
 )
 @TypeConverters(RichContentConverters::class)
@@ -71,6 +74,8 @@ abstract class NodeSeekDatabase : RoomDatabase() {
     abstract fun trackedThreadDao(): TrackedThreadDao
 
     abstract fun stickerDao(): StickerDao
+
+    abstract fun accountDao(): AccountDao
 }
 
 /**
@@ -478,6 +483,58 @@ val MIGRATION_19_20 =
     }
 
 /**
+ * 多账号的三张表。
+ *
+ * 新表都是空着建 —— 老用户升级时没有账号行，[io.github.nodyssey.data.session.AccountRepository]
+ * 的 `migrateIfNeeded` 会在启动时把当前罐子里的会话收编为第一个账号。
+ */
+val MIGRATION_20_21 =
+    object : Migration(20, 21) {
+        override fun migrate(connection: SQLiteConnection) {
+            connection.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `accounts` (
+                    `id` TEXT NOT NULL,
+                    `uid` INTEGER NOT NULL,
+                    `username` TEXT NOT NULL,
+                    `displayName` TEXT NOT NULL,
+                    `avatarUrl` TEXT NOT NULL,
+                    `addedAtMillis` INTEGER NOT NULL,
+                    `lastActiveAtMillis` INTEGER NOT NULL,
+                    PRIMARY KEY(`id`)
+                )
+                """.trimIndent(),
+            )
+            connection.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `account_sessions` (
+                    `accountId` TEXT NOT NULL,
+                    `cookieSnapshotJson` TEXT NOT NULL,
+                    `encryptedPassword` TEXT NOT NULL,
+                    `updatedAtMillis` INTEGER NOT NULL,
+                    PRIMARY KEY(`accountId`),
+                    FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON DELETE CASCADE
+                )
+                """.trimIndent(),
+            )
+            connection.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_account_sessions_accountId` " +
+                    "ON `account_sessions` (`accountId`)",
+            )
+            connection.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `active_account` (
+                    `id` INTEGER NOT NULL,
+                    `accountId` TEXT,
+                    `sessionFingerprint` INTEGER NOT NULL,
+                    PRIMARY KEY(`id`)
+                )
+                """.trimIndent(),
+            )
+        }
+    }
+
+/**
  * Every migration this schema has, in order — the list `createNodeSeekDatabase` opens the file with.
  *
  * Named here, beside the migrations themselves, rather than at the builder: which upgrades are known
@@ -507,4 +564,5 @@ val NODESEEK_MIGRATIONS = arrayOf(
     MIGRATION_17_18,
     MIGRATION_18_19,
     MIGRATION_19_20,
+    MIGRATION_20_21,
 )
