@@ -572,11 +572,6 @@ class NodeSeekDatabaseMigrationTest {
         migrated.close()
     }
 
-    private companion object {
-        const val DATABASE_NAME = "profile-migration-test"
-    }
-}
-
     @Test
     fun `migration 20 to 21 creates the three account tables empty`() {
         // v20 的库直接升到 v21：三张新表建出来，都是空的。
@@ -599,3 +594,8 @@ class NodeSeekDatabaseMigrationTest {
         }
         migrated.close()
     }
+
+    private companion object {
+        const val DATABASE_NAME = "profile-migration-test"
+    }
+}
