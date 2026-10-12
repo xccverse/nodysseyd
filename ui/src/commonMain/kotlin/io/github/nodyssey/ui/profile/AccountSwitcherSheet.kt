@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +49,7 @@ import io.github.nodyssey.ui.resources.account_switch_subtitle
 import io.github.nodyssey.ui.resources.account_switch_switching
 import io.github.nodyssey.ui.resources.account_switch_title
 import io.github.nodyssey.ui.resources.action_cancel
+import io.github.plaza.designsys.component.PlazaSpinner
 import io.github.plaza.designsys.component.UserAvatar
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -249,7 +249,7 @@ private fun AccountRow(
             }
         }
         when {
-            switching -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            switching -> PlazaSpinner(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
 
             account.isActive -> Text(
                 text = "●",

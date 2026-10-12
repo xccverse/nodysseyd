@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import io.github.nodyssey.SignInMode
 import io.github.nodyssey.data.session.AccountSessionStore
 import io.github.nodyssey.data.session.SessionRepository
 import io.github.nodyssey.data.session.SignInCredentials
@@ -49,16 +48,6 @@ class SignInViewModel(
     private val session: SessionRepository,
     private val clock: AppClock,
     private val accounts: AccountSessionStore,
-    /**
-     * 登录屏的来意。AddAccount = 已登录时从账号切换器"添加账号"进来 —— 成功后把新会话
-     * 收编为账号并切过去；普通登录也收编（首登建行、同 uid 去重），见 adoptCurrentSession。
-     */
-    private val mode: SignInMode = SignInMode.SignIn,
-    /**
-     * 一键重登的账号 id：用户名和记住的密码回填进表单，用户只需过人机验证。
-     * 密码是进表单的那一刻才解密的，不进 UiState —— 跟登录密码本身一个待遇。
-     */
-    private val prefillAccountId: String? = null,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SignInUiState())
     val uiState: StateFlow<SignInUiState> = _uiState.asStateFlow()
@@ -72,19 +61,6 @@ class SignInViewModel(
     private var submitJob: Job? = null
 
     init {
-        // 一键重登：用户名和记住的密码回填。解密只做一次、只进输入框 —— 不进 UiState，
-        // 不被 collect，也不随配置变化重建（ViewModel 保证）。
-        prefillAccountId?.let { accountId ->
-            viewModelScope.launch {
-                accounts.accountUsername(accountId)?.let { username ->
-                    if (accountState.text.isEmpty()) accountState.edit { replace(0, length, username) }
-                }
-                val password = accounts.storedPassword(accountId)
-                if (password.isNotEmpty() && passwordState.text.isEmpty()) {
-                    passwordState.edit { replace(0, length, password) }
-                }
-            }
-        }
         snapshotFlow { accountState.text.toString() }
             .onEach { value -> _uiState.update { it.copy(account = value) } }
             .launchIn(viewModelScope)
@@ -310,8 +286,6 @@ class SignInViewModel(
 
         fun factory(
             container: AppContainer,
-            mode: SignInMode = SignInMode.SignIn,
-            prefillAccountId: String? = null,
         ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
@@ -320,8 +294,6 @@ class SignInViewModel(
                         session = container.sessionRepository,
                         clock = container.clock,
                         accounts = container.accountRepository,
-                        mode = mode,
-                        prefillAccountId = prefillAccountId,
                     )
                 }
             }

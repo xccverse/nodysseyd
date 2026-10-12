@@ -537,7 +537,7 @@ private fun IdentityRow(
         IconButton(onClick = onSwitchAccount) {
             Icon(
                 Icons.Filled.AccountCircle,
-                contentDescription = "切换账号",
+                contentDescription = stringResource(Res.string.account_switch_title),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )

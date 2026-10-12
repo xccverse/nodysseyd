@@ -21,7 +21,7 @@ internal fun EntryProviderScope<NavKey>.sessionEntries(nav: StackEntryScope) = w
     entry<SignInKey> { key ->
         val viewModel: SignInViewModel =
             viewModel(
-                factory = SignInViewModel.factory(container, key.mode, key.prefillAccountId),
+                factory = SignInViewModel.factory(container),
                 key = key.toString(),
             )
         SignInRoute(

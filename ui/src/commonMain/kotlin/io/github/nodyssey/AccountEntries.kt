@@ -121,7 +121,7 @@ internal fun EntryProviderScope<NavKey>.accountEntries(nav: StackEntryScope) = w
         ProfileFieldsRoute(
             viewModel = viewModel,
             onBack = { backStack.removeLastOrNull() },
-            onSignIn = { backStack.add(SignInKey()) },
+            onSignIn = { backStack.add(SignInKey) },
             onVerify = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
@@ -141,7 +141,7 @@ internal fun EntryProviderScope<NavKey>.accountEntries(nav: StackEntryScope) = w
             onOpenEnrolmentUri = { uri ->
                 runCatching { uriHandler.openUri(uri) }.isSuccess
             },
-            onSignIn = { backStack.add(SignInKey()) },
+            onSignIn = { backStack.add(SignInKey) },
             onVerify = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
@@ -166,7 +166,7 @@ internal fun EntryProviderScope<NavKey>.accountEntries(nav: StackEntryScope) = w
                     ),
                 )
             },
-            onSignIn = { backStack.add(SignInKey()) },
+            onSignIn = { backStack.add(SignInKey) },
             onVerify = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
@@ -183,7 +183,7 @@ internal fun EntryProviderScope<NavKey>.accountEntries(nav: StackEntryScope) = w
             titleViewModel = titleViewModel,
             initialTab = if (key.titles) BlockTab.TITLES else BlockTab.USERS,
             onBack = { backStack.removeLastOrNull() },
-            onSignIn = { backStack.add(SignInKey()) },
+            onSignIn = { backStack.add(SignInKey) },
             onOpenUser = openSpace,
             onVerify = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
@@ -197,7 +197,7 @@ internal fun EntryProviderScope<NavKey>.accountEntries(nav: StackEntryScope) = w
         PreferencesRoute(
             viewModel = viewModel,
             onBack = { backStack.removeLastOrNull() },
-            onSignIn = { backStack.add(SignInKey()) },
+            onSignIn = { backStack.add(SignInKey) },
             onVerify = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },

@@ -220,11 +220,11 @@ internal fun EntryProviderScope<NavKey>.tabRootEntries(nav: StackEntryScope) = w
                 viewModel = accountSwitcherViewModel,
                 onAddAccount = {
                     showAccountSwitcher = false
-                    backStack.add(SignInKey(mode = SignInMode.AddAccount))
+                    backStack.add(SignInKey)
                 },
                 onReLogin = { accountId ->
                     showAccountSwitcher = false
-                    backStack.add(SignInKey(prefillAccountId = accountId))
+                    backStack.add(SignInKey)
                 },
                 onDismiss = { showAccountSwitcher = false },
             )
