@@ -576,3 +576,26 @@ class NodeSeekDatabaseMigrationTest {
         const val DATABASE_NAME = "profile-migration-test"
     }
 }
+
+    @Test
+    fun `migration 20 to 21 creates the three account tables empty`() {
+        // v20 的库直接升到 v21：三张新表建出来，都是空的。
+        helper.createDatabase(DATABASE_NAME, 20).close()
+
+        val migrated = helper.runMigrationsAndValidate(DATABASE_NAME, 21, true, MIGRATION_20_21)
+
+        // 三张新表都是空的 —— 老用户升级时没有账号行，由 AccountRepository.migrateIfNeeded 收编。
+        migrated.query("SELECT COUNT(*) FROM accounts").use {
+            it.moveToFirst()
+            assertEquals(0, it.getInt(0))
+        }
+        migrated.query("SELECT COUNT(*) FROM account_sessions").use {
+            it.moveToFirst()
+            assertEquals(0, it.getInt(0))
+        }
+        migrated.query("SELECT COUNT(*) FROM active_account").use {
+            it.moveToFirst()
+            assertEquals(0, it.getInt(0))
+        }
+        migrated.close()
+    }

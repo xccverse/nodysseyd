@@ -191,5 +191,7 @@ private val EVERY_KEY: List<NavKey> =
         AssetsKey,
         ImageViewerKey(urls = listOf("https://example.invalid/a.png", "https://example.invalid/b.png"), index = 1),
         WebKey(url = "https://www.nodeseek.com/signIn.html", title = "Nodyssey", goal = WebViewGoal.SIGN_IN),
-        SignInKey,
+        SignInKey(),
+        SignInKey(mode = SignInMode.AddAccount),
+        SignInKey(prefillAccountId = "uid-1001"),
     )

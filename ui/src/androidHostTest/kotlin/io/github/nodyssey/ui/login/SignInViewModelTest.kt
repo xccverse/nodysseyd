@@ -63,6 +63,7 @@ class SignInViewModelTest {
                 signIn = repository,
                 session = SessionRepository(SessionCookies(NodeSeekSite.CONFIG, cookies)),
                 clock = AppClock { FIXED_MILLIS },
+                accounts = NoOpAccountSessionStore(),
             ),
         )
 
@@ -378,4 +379,12 @@ private class FakeSignInRepository(
             }
         }
     }
+}
+
+private class NoOpAccountSessionStore : io.github.nodyssey.data.session.AccountSessionStore {
+    override suspend fun adoptCurrentSession(username: String, password: String) = Unit
+
+    override suspend fun accountUsername(accountId: String): String? = null
+
+    override suspend fun storedPassword(accountId: String): String = ""
 }
