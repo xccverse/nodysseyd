@@ -8,7 +8,6 @@ import io.github.nodyssey.data.UserProfile
 import io.github.nodyssey.data.composer.CommentComposerRepository
 import io.github.nodyssey.data.composer.PostComposerRepository
 import io.github.nodyssey.data.doubles.session.FakeAccountDao
-import io.github.nodyssey.data.doubles.session.FakeSessionCookieStore
 import io.github.nodyssey.data.security.SecretCipher
 import io.github.nodyssey.data.settings.SettingsRepository
 import io.github.nodyssey.data.testPreferenceStore
