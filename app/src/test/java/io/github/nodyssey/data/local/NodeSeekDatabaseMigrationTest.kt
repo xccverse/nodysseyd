@@ -572,7 +572,6 @@ class NodeSeekDatabaseMigrationTest {
         migrated.close()
     }
 
-
     private companion object {
         const val DATABASE_NAME = "profile-migration-test"
     }
