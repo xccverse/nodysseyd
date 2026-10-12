@@ -50,6 +50,7 @@ class ProfileScreenTest {
                     onVerify = {},
                     onAttendance = {},
                     onAttendanceBoard = { boardOpened = true },
+                    onSwitchAccount = {},
                 )
             }
         }
@@ -73,6 +74,7 @@ class ProfileScreenTest {
                     onVerify = {},
                     onAttendance = { attendanceOpened = true },
                     onAttendanceBoard = {},
+                    onSwitchAccount = {},
                 )
             }
         }
@@ -107,6 +109,7 @@ class ProfileScreenTest {
                     onVerify = { verified = true },
                     onAttendance = {},
                     onAttendanceBoard = {},
+                    onSwitchAccount = {},
                 )
             }
         }
