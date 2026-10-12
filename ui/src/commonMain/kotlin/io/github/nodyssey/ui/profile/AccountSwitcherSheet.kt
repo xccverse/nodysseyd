@@ -166,10 +166,10 @@ fun AccountSwitcherSheet(
             item {
                 Row(
                     modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { viewModel.checkpointThenAdd(onAddAccount) }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.checkpointThenAdd(onAddAccount) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -224,10 +224,10 @@ private fun AccountRow(
 ) {
     Row(
         modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable(enabled = !account.isActive && !switching, onClick = onSwitch)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier
+            .fillMaxWidth()
+            .clickable(enabled = !account.isActive && !switching, onClick = onSwitch)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
