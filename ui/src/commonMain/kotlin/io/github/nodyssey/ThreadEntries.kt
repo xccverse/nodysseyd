@@ -113,7 +113,7 @@ internal fun EntryProviderScope<NavKey>.threadEntries(nav: StackEntryScope) = wi
             // A link to this same thread stays on this screen; see [PostDetailViewModel.openLinkInPlace].
             onLinkClick = { url -> if (!viewModel.openLinkInPlace(url)) openContentUrl(url) },
             onAuthorClick = openSpace,
-            onSignIn = { backStack.add(SignInKey) },
+            onSignIn = { backStack.add(SignInKey()) },
             onVerify = { backStack.add(WebKey(it, siteTitle, WebViewGoal.CHALLENGE)) },
             onImageClick = { urls, url -> backStack.add(imageViewerKeyFor(urls, url)) },
             onEdit = { target -> backStack.add(PostComposerKey(target)) },
@@ -127,7 +127,7 @@ internal fun EntryProviderScope<NavKey>.threadEntries(nav: StackEntryScope) = wi
                         key = "vote-$voteId",
                         factory = VoteViewModel.factory(container, voteId),
                     ),
-                    onSignIn = { backStack.add(SignInKey) },
+                    onSignIn = { backStack.add(SignInKey()) },
                     onUserClick = openSpace,
                 )
             },
@@ -142,7 +142,7 @@ internal fun EntryProviderScope<NavKey>.threadEntries(nav: StackEntryScope) = wi
                         key = "stardust-${node.memberId}-${node.refId}",
                         factory = StardustReceiveViewModel.factory(container, node),
                     ),
-                    onSignIn = { backStack.add(SignInKey) },
+                    onSignIn = { backStack.add(SignInKey()) },
                 )
             },
             shareImage = rememberShareImage(container.dispatchers),
@@ -172,7 +172,7 @@ internal fun EntryProviderScope<NavKey>.threadEntries(nav: StackEntryScope) = wi
             viewModel = viewModel,
             onClose = { backStack.removeLastOrNull() },
             onSignIn = {
-                backStack.add(SignInKey)
+                backStack.add(SignInKey())
             },
             onVerify = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))

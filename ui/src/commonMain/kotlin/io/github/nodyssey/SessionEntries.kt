@@ -18,8 +18,12 @@ import io.github.nodyssey.ui.login.WebViewRoute
  * for the capture rules they all share.
  */
 internal fun EntryProviderScope<NavKey>.sessionEntries(nav: StackEntryScope) = with(nav) {
-    entry<SignInKey> {
-        val viewModel: SignInViewModel = viewModel(factory = SignInViewModel.factory(container))
+    entry<SignInKey> { key ->
+        val viewModel: SignInViewModel =
+            viewModel(
+                factory = SignInViewModel.factory(container, key.mode, key.prefillAccountId),
+                key = key.toString(),
+            )
         SignInRoute(
             viewModel = viewModel,
             // Both sites share one Turnstile application, but the key is still read per site — see

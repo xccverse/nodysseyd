@@ -367,9 +367,20 @@ data class ImageViewerKey(
  * Every 登录 in the app lands here now. The site's own page is still reachable, from the two places
  * that need it: 改用网页登录 when the verification widget cannot start, and 忘记密码 / 还没有账号,
  * which have no verified URL of their own to go to.
+ *
+ * 多账号：[mode] 区分"登录"和"从切换器添加账号"；[prefillAccountId] 给过期账号一键重登回填用。
  */
 @Serializable
-data object SignInKey : NavKey
+data class SignInKey(
+    val mode: SignInMode = SignInMode.SignIn,
+    val prefillAccountId: String? = null,
+) : NavKey
+
+@Serializable
+enum class SignInMode {
+    SignIn,
+    AddAccount,
+}
 
 /**
  * Opens the restricted in-app browser for login and Cloudflare challenges.

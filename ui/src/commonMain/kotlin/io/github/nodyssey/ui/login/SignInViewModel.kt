@@ -8,6 +8,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import io.github.nodyssey.SignInMode
+import io.github.nodyssey.data.session.AccountSessionStore
 import io.github.nodyssey.data.session.SessionRepository
 import io.github.nodyssey.data.session.SignInCredentials
 import io.github.nodyssey.data.session.SignInOutcome
@@ -46,6 +48,17 @@ class SignInViewModel(
     private val signIn: SignInRepository,
     private val session: SessionRepository,
     private val clock: AppClock,
+    private val accounts: AccountSessionStore,
+    /**
+     * 登录屏的来意。AddAccount = 已登录时从账号切换器"添加账号"进来 —— 成功后把新会话
+     * 收编为账号并切过去；普通登录也收编（首登建行、同 uid 去重），见 adoptCurrentSession。
+     */
+    private val mode: SignInMode = SignInMode.SignIn,
+    /**
+     * 一键重登的账号 id：用户名和记住的密码回填进表单，用户只需过人机验证。
+     * 密码是进表单的那一刻才解密的，不进 UiState —— 跟登录密码本身一个待遇。
+     */
+    private val prefillAccountId: String? = null,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SignInUiState())
     val uiState: StateFlow<SignInUiState> = _uiState.asStateFlow()
@@ -59,6 +72,19 @@ class SignInViewModel(
     private var submitJob: Job? = null
 
     init {
+        // 一键重登：用户名和记住的密码回填。解密只做一次、只进输入框 —— 不进 UiState，
+        // 不被 collect，也不随配置变化重建（ViewModel 保证）。
+        prefillAccountId?.let { accountId ->
+            viewModelScope.launch {
+                accounts.accountUsername(accountId)?.let { username ->
+                    if (accountState.text.isEmpty()) accountState.edit { replace(0, length, username) }
+                }
+                val password = accounts.storedPassword(accountId)
+                if (password.isNotEmpty() && passwordState.text.isEmpty()) {
+                    passwordState.edit { replace(0, length, password) }
+                }
+            }
+        }
         snapshotFlow { accountState.text.toString() }
             .onEach { value -> _uiState.update { it.copy(account = value) } }
             .launchIn(viewModelScope)
@@ -170,6 +196,18 @@ class SignInViewModel(
                 // accusing a sign-in that worked of not having worked is the one wrong answer this
                 // check must not give.
                 if (session.syncAwaitingSession().isSignedIn) {
+                    // 会话落定：收编为账号（首登建行、同 uid 去重）并设为当前。
+                    // AddAccount 模式进屏前已 checkpoint 旧账号 —— 见账号切换器的"添加账号"。
+                    //
+                    // 失败也不拦路：cookie 已经在罐子里了，会话是有效的；收编失败的孤儿会话由
+                    // NodysseyApp 的会话守护收编（ensureActiveAccount）。拦在这里只会把一个
+                    // 已经登录的用户晾在登录屏上。
+                    runCatchingExceptCancellation {
+                        accounts.adoptCurrentSession(
+                            username = accountState.text.toString(),
+                            password = passwordState.text.toString(),
+                        )
+                    }
                     _uiState.update { it.copy(isSubmitting = false, signedIn = true) }
                 } else {
                     // Back to card 1 whichever leg we are on: card 3 has nothing left to post, and
@@ -270,13 +308,20 @@ class SignInViewModel(
         /** Fine enough that the number never appears to skip, cheap enough to leave running. */
         const val TICK_MILLIS = 250L
 
-        fun factory(container: AppContainer): ViewModelProvider.Factory =
+        fun factory(
+            container: AppContainer,
+            mode: SignInMode = SignInMode.SignIn,
+            prefillAccountId: String? = null,
+        ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
                     SignInViewModel(
                         signIn = container.signInRepository,
                         session = container.sessionRepository,
                         clock = container.clock,
+                        accounts = container.accountRepository,
+                        mode = mode,
+                        prefillAccountId = prefillAccountId,
                     )
                 }
             }

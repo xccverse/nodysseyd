@@ -61,7 +61,7 @@ internal fun EntryProviderScope<NavKey>.toolsEntries(nav: StackEntryScope) = wit
             onOpenBrowser = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
-            onSignIn = { backStack.add(SignInKey) },
+            onSignIn = { backStack.add(SignInKey()) },
         )
     }
 
@@ -99,7 +99,7 @@ internal fun EntryProviderScope<NavKey>.toolsEntries(nav: StackEntryScope) = wit
             onVerify = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
-            onSignIn = { backStack.add(SignInKey) },
+            onSignIn = { backStack.add(SignInKey()) },
         )
     }
 }

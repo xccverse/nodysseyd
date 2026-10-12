@@ -55,7 +55,7 @@ internal fun EntryProviderScope<NavKey>.spaceEntries(nav: StackEntryScope) = wit
             onEditProfile = { backStack.add(AccountProfileFieldsKey) },
             onOpenBrowser = openWebUrl,
             onLinkClick = openContentUrl,
-            onSignIn = { backStack.add(SignInKey) },
+            onSignIn = { backStack.add(SignInKey()) },
             onVerify = { backStack.add(WebKey(it, siteTitle, WebViewGoal.CHALLENGE)) },
         )
     }
@@ -68,7 +68,7 @@ internal fun EntryProviderScope<NavKey>.spaceEntries(nav: StackEntryScope) = wit
             onBack = { backStack.removeLastOrNull() },
             onPostClick = { postId -> backStack.add(PostDetailKey(postId)) },
             onOpenBrowser = openWebUrl,
-            onSignIn = { backStack.add(SignInKey) },
+            onSignIn = { backStack.add(SignInKey()) },
             onVerify = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
@@ -96,7 +96,7 @@ internal fun EntryProviderScope<NavKey>.spaceEntries(nav: StackEntryScope) = wit
             // `/space` needs the session's cookies, so a wall here is cleared in the app's own web
             // view rather than in the cookie-less system browser.
             onOpenBrowser = { backStack.add(WebKey(NodeSeekSite.BASE_URL, siteTitle, WebViewGoal.CHALLENGE)) },
-            onSignIn = { backStack.add(SignInKey) },
+            onSignIn = { backStack.add(SignInKey()) },
             onVerify = { backStack.add(WebKey(it, siteTitle, WebViewGoal.CHALLENGE)) },
         )
     }
@@ -111,7 +111,7 @@ internal fun EntryProviderScope<NavKey>.spaceEntries(nav: StackEntryScope) = wit
             onCommentClick = { postId, floor -> backStack.add(PostDetailKey(postId, floor)) },
             onBrowseFeed = openHomeTab,
             onOpenBrowser = { backStack.add(WebKey(NodeSeekSite.BASE_URL, siteTitle, WebViewGoal.CHALLENGE)) },
-            onSignIn = { backStack.add(SignInKey) },
+            onSignIn = { backStack.add(SignInKey()) },
             onVerify = { backStack.add(WebKey(it, siteTitle, WebViewGoal.CHALLENGE)) },
         )
     }
@@ -136,7 +136,7 @@ internal fun EntryProviderScope<NavKey>.spaceEntries(nav: StackEntryScope) = wit
             onOpenBrowser = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
-            onSignIn = { backStack.add(SignInKey) },
+            onSignIn = { backStack.add(SignInKey()) },
         )
     }
 
@@ -155,7 +155,7 @@ internal fun EntryProviderScope<NavKey>.spaceEntries(nav: StackEntryScope) = wit
             onOpenBrowser = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
-            onSignIn = { backStack.add(SignInKey) },
+            onSignIn = { backStack.add(SignInKey()) },
         )
     }
 
@@ -177,7 +177,7 @@ internal fun EntryProviderScope<NavKey>.spaceEntries(nav: StackEntryScope) = wit
             onOpenBrowser = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
-            onSignIn = { backStack.add(SignInKey) },
+            onSignIn = { backStack.add(SignInKey()) },
         )
     }
 
@@ -197,7 +197,7 @@ internal fun EntryProviderScope<NavKey>.spaceEntries(nav: StackEntryScope) = wit
                     WebKey(ledgerUrl ?: NodeSeekSite.BASE_URL, siteTitle, WebViewGoal.MANAGE),
                 )
             },
-            onSignIn = { backStack.add(SignInKey) },
+            onSignIn = { backStack.add(SignInKey()) },
             onVerify = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
