@@ -217,8 +217,11 @@ class AccountRepository(
             silentAttemptFingerprint = null
             // 4. 验证：快照里的 cookie 非空 ≠ 服务器还认 —— 验活，死了就地静默重登，
             // 还不行就交回给 UI（账号过期）。
-            return if (ensureLiveSession(accountId)) SwitchResult.Switched
-            else SwitchResult.SessionExpired(accountId)
+            return if (ensureLiveSession(accountId)) {
+                SwitchResult.Switched
+            } else {
+                SwitchResult.SessionExpired(accountId)
+            }
         }
 
     /**
