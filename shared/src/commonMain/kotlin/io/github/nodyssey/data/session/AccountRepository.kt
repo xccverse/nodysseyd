@@ -192,8 +192,11 @@ class AccountRepository(
             dao.account(accountId) ?: return SwitchResult.NoSuchAccount
             val activeId = dao.activeAccount()?.accountId
             if (activeId == accountId) {
-                return if (ensureActiveSession(accountId)) SwitchResult.AlreadyActive
-                else SwitchResult.SessionExpired(accountId)
+                return if (ensureActiveSession(accountId)) {
+                    SwitchResult.AlreadyActive
+                } else {
+                    SwitchResult.SessionExpired(accountId)
+                }
             }
             // 1. 存盘当前 —— 快照只在有会话时写，空快照不覆盖有效快照。
             if (activeId != null && session.peek().isSignedIn) {
