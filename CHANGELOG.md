@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+### 修复
+
+- iOS：切换账号时同时清空 App 请求与登录网页各自的 Cookie 罐（`NSHTTPCookieStorage` 与 WebKit 的 `WKHTTPCookieStore`），修掉"切完仍停留在旧账号"的问题；退出登录同样清两套，避免下一次打开登录页把旧账号的 Cookie 倒回来。
+
 ## 1.2.23-dev.1 - 2026-10-12
 
 ### 新增

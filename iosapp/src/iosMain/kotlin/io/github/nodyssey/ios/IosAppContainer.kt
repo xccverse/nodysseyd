@@ -125,6 +125,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import platform.Foundation.NSHTTPCookieStorage
 import platform.Foundation.NSURLSession
+import platform.WebKit.WKWebsiteDataStore
 
 /**
  * The dependency graph on iOS — the counterpart of `DefaultAppContainer` in `:app`.
@@ -167,7 +168,11 @@ class IosAppContainer(
      * bridge is for: WebKit writes somewhere else, and a jar the app reads and a jar the sign-in
      * browser writes are only the same jar on Android.
      */
-    private val cookieStore = AppleCookieStore(NSHTTPCookieStorage.sharedHTTPCookieStorage)
+    private val cookieStore =
+        AppleCookieStore(
+            NSHTTPCookieStorage.sharedHTTPCookieStorage,
+            WKWebsiteDataStore.defaultDataStore().httpCookieStore,
+        )
 
     private val sessionCookies: SessionCookies by lazy { SessionCookies(NodeSeekSite.CONFIG, cookieStore) }
 
