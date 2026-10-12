@@ -66,7 +66,7 @@ internal fun EntryProviderScope<NavKey>.tabRootEntries(nav: StackEntryScope) = w
             onSearch = { backStack.add(SearchKey()) },
             onAccountClick = openProfileTab,
             onSignIn = {
-                backStack.add(SignInKey())
+                backStack.add(SignInKey)
             },
             onVerify = {
                 backStack.add(WebKey(it, siteTitle, WebViewGoal.CHALLENGE))
@@ -88,7 +88,7 @@ internal fun EntryProviderScope<NavKey>.tabRootEntries(nav: StackEntryScope) = w
             // yourself in search must open the same self-shaped space 我的 opens.
             onUserClick = openSpace,
             onBack = { backStack.removeLastOrNull() },
-            onSignIn = { backStack.add(SignInKey()) },
+            onSignIn = { backStack.add(SignInKey) },
             onVerify = { backStack.add(WebKey(it, siteTitle, WebViewGoal.CHALLENGE)) },
             // No `onNavigationBarHiddenChanged`: 搜索 is not a tab root any more, so on a phone the
             // bar is already gone while it is open and there is nothing for the scroll to hide.
@@ -104,7 +104,7 @@ internal fun EntryProviderScope<NavKey>.tabRootEntries(nav: StackEntryScope) = w
         val scope = rememberCoroutineScope()
         NotificationsRoute(
             viewModel = notificationsViewModel,
-            onSignIn = { backStack.add(SignInKey()) },
+            onSignIn = { backStack.add(SignInKey) },
             onVerify = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
@@ -134,7 +134,7 @@ internal fun EntryProviderScope<NavKey>.tabRootEntries(nav: StackEntryScope) = w
             viewModel = viewModel,
             showBackButton = !(isListDetailExpanded() && backStack.showsListPane()),
             onBack = { backStack.removeLastOrNull() },
-            onSignIn = { backStack.add(SignInKey()) },
+            onSignIn = { backStack.add(SignInKey) },
             onVerify = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
@@ -206,7 +206,7 @@ internal fun EntryProviderScope<NavKey>.tabRootEntries(nav: StackEntryScope) = w
                 // Signed out only: the six links this page holds are tiles of their own above.
                 tools = { backStack.add(CommunityToolsKey) },
             ),
-            onSignIn = { backStack.add(SignInKey()) },
+            onSignIn = { backStack.add(SignInKey) },
             hasAppUpdate = hasUpdate,
             onOpenWebsite = { openWebUrl(NodeSeekSite.BASE_URL) },
             onVerify = { url ->
