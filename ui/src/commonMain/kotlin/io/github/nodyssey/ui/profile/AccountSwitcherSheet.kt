@@ -248,14 +248,17 @@ private fun AccountRow(
         }
         when {
             switching -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+
             account.isActive -> Text(
                 text = "●",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
+
             account.isExpired -> TextButton(onClick = onReLogin) {
                 Text(stringResource(Res.string.account_switch_relogin))
             }
+
             else -> IconButton(onClick = onDelete) {
                 Text(
                     text = stringResource(Res.string.account_switch_delete),
