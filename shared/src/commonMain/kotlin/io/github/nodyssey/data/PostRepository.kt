@@ -7,9 +7,9 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import io.github.nodyssey.data.local.BoardScrollPositionEntity
 import io.github.nodyssey.data.local.CacheSessionEntity
 import io.github.nodyssey.data.local.CommentEntity
-import io.github.nodyssey.data.local.BoardScrollPositionEntity
 import io.github.nodyssey.data.local.FeedPostRow
 import io.github.nodyssey.data.local.NodeSeekDatabase
 import io.github.nodyssey.data.local.ReadHistoryRow

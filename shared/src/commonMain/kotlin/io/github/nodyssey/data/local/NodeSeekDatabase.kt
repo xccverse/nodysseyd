@@ -537,7 +537,6 @@ val MIGRATION_20_21 =
         }
     }
 
-
 /**
  * 滚动位置记忆：新建 `board_scroll_positions` 表。
  *
