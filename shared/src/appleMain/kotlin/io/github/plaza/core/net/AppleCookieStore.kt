@@ -76,7 +76,7 @@ class AppleCookieStore(
      */
     override suspend fun removeAll() {
         storage.cookies.orEmpty().filterIsInstance<NSHTTPCookie>().forEach { storage.deleteCookie(it) }
-        withTimeoutOrNull(cleanWebKitTimeoutMillis) {
+        withTimeoutOrNull(CLEAN_WEB_KIT_TIMEOUT_MILLIS) {
             withContext(Dispatchers.Main) {
                 val live =
                     suspendCancellableCoroutine<List<NSHTTPCookie>> { continuation ->
@@ -104,4 +104,4 @@ class AppleCookieStore(
  * Long enough for a jar that answers normally, short enough that a queue that never answers costs one
  * moment rather than the screen the caller was on.
  */
-private const val cleanWebKitTimeoutMillis = 2_000L
+private const val CLEAN_WEB_KIT_TIMEOUT_MILLIS = 2_000L
