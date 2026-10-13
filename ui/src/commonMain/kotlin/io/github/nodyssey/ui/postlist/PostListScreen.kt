@@ -123,6 +123,7 @@ import io.github.nodyssey.ui.resources.Res
 import io.github.nodyssey.ui.resources.action_create_post
 import io.github.nodyssey.ui.resources.action_sort
 import io.github.nodyssey.ui.resources.action_switch_site
+import io.github.nodyssey.ui.resources.feed_last_position_label
 import io.github.nodyssey.ui.resources.feed_page_size_note
 import io.github.nodyssey.ui.resources.home_search_hint
 import io.github.nodyssey.ui.resources.page_jump_newest
