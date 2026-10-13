@@ -286,9 +286,9 @@ class PostListViewModel(
     }
 
     /**
-     * 记住当前位置。退出、刷新、滚动停稳后调 —— 下次进来画线用。
+     * 记住当前位置。切后台、退出列表时调 —— 下次进来画线用。
      *
-     * 只记不清空：刷新后列表重载，线还在那条帖子上。
+     * 记的是屏幕最下面那条帖子："读到这里"，线画在它上面。
      */
     fun saveScrollPosition(postId: Long) {
         val slug = _uiState.value.categorySlug
@@ -404,7 +404,7 @@ data class PostListUiState(
     /** How many pages the site says this feed has, as of the last page stored. */
     val totalPages: Int = 1,
     /**
-     * 上次离开时记下的位置 —— "退出/刷新那一刻屏幕上最上面那条帖子"的 postId。
+     * 上次离开时记下的位置 —— "切后台/退出那一刻屏幕最下面那条帖子"的 postId。
      *
      * 按（版块，排序）分别记。null = 没记过，不画线。读到新值时 UI 在那条帖子上面画线。
      */

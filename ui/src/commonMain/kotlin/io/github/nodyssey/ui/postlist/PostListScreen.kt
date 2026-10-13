@@ -77,6 +77,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
@@ -158,7 +161,6 @@ import io.github.plaza.designsys.theme.cardBorderStroke
 import io.github.plaza.designsys.theme.cardShadow
 import io.github.plaza.designsys.theme.readableWidth
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapNotNull
@@ -732,16 +734,32 @@ private fun BoardFeed(
     val appendState = posts.loadState.append
     val showSkeleton = posts.itemCount == 0 && refreshState is LoadState.Loading
 
-    // 滚动停稳 1 秒后记住顶部帖子 —— 退出、刷新、杀进程三种时机都靠它兜底。
-    // 用 peek 不触发加载：只读已在内存里的行。
+    // 当前屏幕最下面那条帖子的 ID —— "读到这里"的标记点。
+    // 用 layoutInfo 而不用 firstVisibleItemIndex：要的是底部。
+    var bottomPostId by remember { mutableStateOf<Long?>(null) }
     LaunchedEffect(listState, posts) {
-        snapshotFlow { listState.firstVisibleItemIndex }
-            .debounce(1000)
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
             .collect { index ->
-                if (index < posts.itemCount) {
-                    posts.peek(index)?.summary?.postId?.let { onSavePosition(it) }
+                if (index != null && index < posts.itemCount) {
+                    bottomPostId = posts.peek(index)?.summary?.postId
                 }
             }
+    }
+
+    // App 切后台时保存 —— 杀进程前一定先经过后台，这个兜住"杀进程"。
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, bottomPostId) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) {
+                bottomPostId?.let { onSavePosition(it) }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            // 退出列表（切版块/离开页面）时保存。
+            bottomPostId?.let { onSavePosition(it) }
+        }
     }
     // 综合 is the front page rather than a board, so it is the one place "read something else"
     // cannot point at.
