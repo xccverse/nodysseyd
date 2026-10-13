@@ -235,6 +235,68 @@ class PostListViewModelTest {
             assertNull(repository.thread(42).first())
             assertEquals(null, vm.uiState.value.categorySlug)
         }
+
+    /**
+     * 滚动位置记忆的四个测试。
+     *
+     * 1. saveScrollPosition 把 postId 存进库并更新 UiState
+     * 2. loadRememberedPosition 把库里的 postId 读进 UiState
+     * 3. 不同版块/排序的位置互不干扰
+     * 4. 没记过的位置读出来是 null
+     */
+    @Test
+    fun `saveScrollPosition stores the post id and updates UiState`() =
+        runTest(dispatcher) {
+            val vm = viewModel()
+            advanceUntilIdle()
+
+            vm.saveScrollPosition(12345L)
+            advanceUntilIdle()
+
+            assertEquals(12345L, vm.uiState.value.rememberedPostId)
+        }
+
+    @Test
+    fun `loadRememberedPosition reads the stored post id into UiState`() =
+        runTest(dispatcher) {
+            val repository = OfflineFirstPostRepository(database, remote, clock)
+            // 先存一个位置
+            repository.saveBoardScrollPosition(null, FeedSort.LAST_REPLY, 67890L)
+
+            val vm = viewModel()
+            advanceUntilIdle()
+            // 刚创建时是 null
+            assertNull(vm.uiState.value.rememberedPostId)
+
+            vm.loadRememberedPosition()
+            advanceUntilIdle()
+
+            assertEquals(67890L, vm.uiState.value.rememberedPostId)
+        }
+
+    @Test
+    fun `scroll positions are per board and sort`() =
+        runTest(dispatcher) {
+            val repository = OfflineFirstPostRepository(database, remote, clock)
+
+            repository.saveBoardScrollPosition(null, FeedSort.LAST_REPLY, 111L)
+            repository.saveBoardScrollPosition("tech", FeedSort.LAST_REPLY, 222L)
+            repository.saveBoardScrollPosition(null, FeedSort.POST_TIME, 333L)
+
+            assertEquals(111L, repository.boardScrollPosition(null, FeedSort.LAST_REPLY))
+            assertEquals(222L, repository.boardScrollPosition("tech", FeedSort.LAST_REPLY))
+            assertEquals(333L, repository.boardScrollPosition(null, FeedSort.POST_TIME))
+            // 没存过的组合是 null
+            assertNull(repository.boardScrollPosition("tech", FeedSort.POST_TIME))
+        }
+
+    @Test
+    fun `no stored position yields null`() =
+        runTest(dispatcher) {
+            val repository = OfflineFirstPostRepository(database, remote, clock)
+            assertNull(repository.boardScrollPosition(null, FeedSort.LAST_REPLY))
+            assertNull(repository.boardScrollPosition("nonexistent", FeedSort.LAST_REPLY))
+        }
 }
 
 /**
@@ -251,74 +313,13 @@ private class HeldPreferencesStore(
 }
 
 /**
- * 滚动位置记忆的四个测试。
- *
- * 1. saveScrollPosition 把 postId 存进库并更新 UiState
- * 2. loadRememberedPosition 把库里的 postId 读进 UiState
- * 3. 不同版块/排序的位置互不干扰
- * 4. 没记过的位置读出来是 null
- */
-@Test
-fun `saveScrollPosition stores the post id and updates UiState`() =
-    runTest(dispatcher) {
-        val vm = viewModel()
-        advanceUntilIdle()
-
-        vm.saveScrollPosition(12345L)
-        advanceUntilIdle()
-
-        assertEquals(12345L, vm.uiState.value.rememberedPostId)
-    }
-
-@Test
-fun `loadRememberedPosition reads the stored post id into UiState`() =
-    runTest(dispatcher) {
-        val repository = OfflineFirstPostRepository(database, remote, clock)
-        // 先存一个位置
-        repository.saveBoardScrollPosition(null, FeedSort.LAST_REPLY, 67890L)
-
-        val vm = viewModel()
-        advanceUntilIdle()
-        // 刚创建时是 null
-        assertNull(vm.uiState.value.rememberedPostId)
-
-        vm.loadRememberedPosition()
-        advanceUntilIdle()
-
-        assertEquals(67890L, vm.uiState.value.rememberedPostId)
-    }
-
-@Test
-fun `scroll positions are per board and sort`() =
-    runTest(dispatcher) {
-        val repository = OfflineFirstPostRepository(database, remote, clock)
-
-        repository.saveBoardScrollPosition(null, FeedSort.LAST_REPLY, 111L)
-        repository.saveBoardScrollPosition("tech", FeedSort.LAST_REPLY, 222L)
-        repository.saveBoardScrollPosition(null, FeedSort.POST_TIME, 333L)
-
-        assertEquals(111L, repository.boardScrollPosition(null, FeedSort.LAST_REPLY))
-        assertEquals(222L, repository.boardScrollPosition("tech", FeedSort.LAST_REPLY))
-        assertEquals(333L, repository.boardScrollPosition(null, FeedSort.POST_TIME))
-        // 没存过的组合是 null
-        assertNull(repository.boardScrollPosition("tech", FeedSort.POST_TIME))
-    }
-
-@Test
-fun `no stored position yields null`() =
-    runTest(dispatcher) {
-        val repository = OfflineFirstPostRepository(database, remote, clock)
-        assertNull(repository.boardScrollPosition(null, FeedSort.LAST_REPLY))
-        assertNull(repository.boardScrollPosition("nonexistent", FeedSort.LAST_REPLY))
-    }
-
-/**
  * Records the orders the ViewModel actually opens a pager on.
  *
  * The assertion cannot be made on the `PagingData` stream: `cachedIn` finishes its work off the test
  * scheduler, so `advanceUntilIdle` returns before any of it lands. The call into the repository is
  * the same event one step earlier, and it happens on the collector's own dispatcher.
  */
+
 private class RecordingFeedRepository(
     private val delegate: PostRepository,
 ) : PostRepository by delegate {
