@@ -39,13 +39,17 @@ import platform.darwin.NSObject
  * document start defines `__nsBridge` over that, so [turnstileDocument] does not have to know which
  * host it landed in.
  *
- * This is the one place Apple cannot copy Android verbatim. Android's `loadDataWithBaseURL` keeps the
- * document's origin; `loadHTMLString` does not, and a sitekey is bound to the hostnames it may be
- * rendered on, so a widget whose document has no origin is refused before the user ever sees a
- * checkbox — which is what left this platform with nothing but 「改用网页登录」. So the view is
- * navigated to the site's own https origin first, and the widget's markup is written into that page
- * once the navigation finishes: `document.write` keeps the creating document's origin, so the widget
- * renders where Turnstile allows it to.
+ * Two things Apple cannot copy from Android, and both are about where the markup is allowed to live:
+ *
+ * 1. Android's `loadDataWithBaseURL` keeps the document's origin; `loadHTMLString` does not. A sitekey
+ *    is bound to the hostnames it may be rendered on, so a widget whose document has no origin is
+ *    refused before the user ever sees a checkbox — which is what left this platform with nothing but
+ *    「改用网页登录」. The view is therefore navigated to the site's own https origin, and the markup
+ *    is written into that page once it finishes: `document.write` keeps the creating origin.
+ * 2. That page brings its Content-Security-Policy along, and the site's policy allows only
+ *    nonce-carrying inline scripts. The markup's own `<script>` carries no nonce, so it never runs and
+ *    Cloudflare's loader finds nothing to call under `onload`. The injection hands the written tags
+ *    the page's nonce and defines the two entry points itself, so the widget comes up either way.
  *
  * Contained the same way the Android actual is: only the site's own host may load, every other
  * main-frame navigation is cancelled, and the page is never handed a URL it can follow out.
@@ -67,9 +71,11 @@ actual fun TurnstileWidget(
     val document = remember(sitekey, darkTheme) { turnstileDocument(sitekey, darkTheme) }
 
     val host =
-        remember(document) {
+        remember(document, sitekey, darkTheme) {
             TurnstileHost(
                 document = document,
+                sitekey = sitekey,
+                darkTheme = darkTheme,
                 onToken = { currentToken(it) },
                 onExpired = { currentExpired() },
                 onUnavailable = { currentUnavailable() },
@@ -134,6 +140,8 @@ private fun newTurnstileWebView(userAgent: UserAgent, host: TurnstileHost): WKWe
  */
 private class TurnstileHost(
     private val document: String,
+    private val sitekey: String,
+    private val darkTheme: Boolean,
     private val onToken: (String) -> Unit,
     private val onExpired: () -> Unit,
     private val onUnavailable: () -> Unit,
@@ -163,10 +171,6 @@ private class TurnstileHost(
     /**
      * The site's own page has loaded — now put the widget's markup in it.
      *
-     * `document.write` replaces the document while keeping the origin it was written from, which is
-     * the whole point of loading the site first. The bridge is redefined in the same breath because
-     * the write throws away the document the injected shim ran in.
-     *
      * Written once: the markup carries no navigations of its own, and a second write would restart
      * the challenge the user may already have passed. Only the site's own host qualifies — an
      * interstitial served from anywhere else must not have the widget written into it, or the
@@ -176,7 +180,7 @@ private class TurnstileHost(
         if (hasWrittenDocument) return
         if (webView.URL?.host != siteHost) return
         hasWrittenDocument = true
-        webView.evaluateJavaScript(documentInjectionScript(document), null)
+        webView.evaluateJavaScript(widgetInjectionScript(document, sitekey, darkTheme), null)
     }
 
     /**
@@ -204,18 +208,42 @@ private class TurnstileHost(
 }
 
 /**
- * The bridge shim again, then the widget's markup written into the already-loaded page.
+ * Puts the widget into the page the site's own origin already served, then re-establishes everything
+ * that page needs to come up.
  *
- * Order matters: `document.open()` throws the old document away, so the shim has to be defined after
- * the write rather than before it, and both happen in one evaluation so nothing the page's script
- * does asynchronously can run in between.
+ * In order:
+ * 1. Read the served page's CSP nonce off one of its own `<script>` tags and hand it to the tags in
+ *    the markup we are about to write: the site's policy allows only nonce-carrying inline scripts,
+ *    so without it the widget's own script is dropped on the floor.
+ * 2. `document.open()` / `write` / `close()`, which replaces the document while keeping the origin it
+ *    was written from.
+ * 3. Redefine the bridge — the write threw away the document the injected shim ran in.
+ * 4. Define `nsTurnstileReady` and `nsTurnstileReset` here rather than trusting the markup's own copy,
+ *    which may or may not have been allowed through. Cloudflare's loader calls the former by name
+ *    (`onload=…`), so it has to exist under exactly that name either way.
  */
-private fun documentInjectionScript(document: String): String =
-    BRIDGE_SHIM +
-        "\ndocument.open();\ndocument.write(" +
-        javaScriptStringLiteral(document) +
-        ");\ndocument.close();\n" +
-        BRIDGE_SHIM
+private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: Boolean): String {
+    val theme = if (darkTheme) "dark" else "light"
+    return buildString {
+        append("(function(){")
+        append("var n='';var s=document.getElementsByTagName('script');")
+        append("for(var i=0;i<s.length;i++){if(s[i].nonce){n=s[i].nonce;break;}}")
+        append("var h=").append(javaScriptStringLiteral(document)).append(";")
+        append("if(n){h=h.split('<script').join('<script nonce=\"'+n+'\"');}")
+        append("document.open();document.write(h);document.close();")
+        append("})();")
+        append('\n').append(BRIDGE_SHIM).append('\n')
+        append("window.nsTurnstileReset=function(){try{turnstile.reset();}catch(e){}};")
+        append("window.nsTurnstileReady=function(){try{turnstile.render('#w',{")
+        append("sitekey:").append(javaScriptStringLiteral(sitekey)).append(',')
+        append("theme:").append(javaScriptStringLiteral(theme)).append(',')
+        append("callback:function(t){").append(TURNSTILE_BRIDGE).append(".post('token',t);},")
+        append("'expired-callback':function(){").append(TURNSTILE_BRIDGE).append(".post('expired','');},")
+        append("'timeout-callback':function(){").append(TURNSTILE_BRIDGE).append(".post('expired','');},")
+        append("'error-callback':function(e){").append(TURNSTILE_BRIDGE).append(".post('error',String(e||''));}")
+        append("});}catch(e){").append(TURNSTILE_BRIDGE).append(".post('error',String(e));}};")
+    }
+}
 
 /** The markup as one JavaScript string literal — escaped, since `evaluateJavaScript` takes source. */
 private fun javaScriptStringLiteral(text: String): String {
