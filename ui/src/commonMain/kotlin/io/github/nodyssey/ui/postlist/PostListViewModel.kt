@@ -295,8 +295,8 @@ class PostListViewModel(
         val sort = _uiState.value.sort
         viewModelScope.launch {
             repository.saveBoardScrollPosition(slug, sort, postId)
-            // 记完就把线也更新到最新位置 —— 免得旧线还留在上面。
-            _uiState.update { it.copy(rememberedPostId = postId) }
+            // 注意：这里不更新 rememberedPostId。线只在重新进来时画（loadRememberedPosition），
+            // 保存时如果同步更新，滚动过程中线会一直粘在屏幕上。
         }
     }
 
