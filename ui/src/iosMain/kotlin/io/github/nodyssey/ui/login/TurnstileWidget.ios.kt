@@ -254,13 +254,14 @@ private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: 
         append("document.open();document.write(h);document.close();")
         append(BRIDGE_SHIM)
         append("window.nsTurnstileReset=function(){try{turnstile.reset();}catch(e){}};")
-        append("window.nsTurnstileReady=function(){try{turnstile.render('#w',{")
+        append("window.nsTurnstileReady=function(){try{window.__nsWid=turnstile.render('#w',{")
         append("sitekey:").append(javaScriptStringLiteral(sitekey)).append(',')
         append("theme:").append(javaScriptStringLiteral(theme)).append(',')
         append("callback:function(t){").append(TURNSTILE_BRIDGE).append(".post('token',t);},")
         append("'expired-callback':function(){").append(TURNSTILE_BRIDGE).append(".post('expired','');},")
         append("'timeout-callback':function(){").append(TURNSTILE_BRIDGE).append(".post('expired','');},")
-        append("'error-callback':function(e){").append(TURNSTILE_BRIDGE).append(".post('error',String(e||''));}")
+        append("'error-callback':function(e){window.__nsErr='cf: '+e;")
+        append(TURNSTILE_BRIDGE).append(".post('error',String(e||''));}")
         append("});}catch(e){window.__nsErr='render: '+e;}window.__nsRendered=true;};")
         append("window.__nsErr=null;")
         // 兜底：Cloudflare 的加载器偶尔会比上面的定义先跑完，那它按名字调 onload 就没人应答 ——
@@ -316,13 +317,11 @@ private val DIAGNOSTIC_SHIM =
         var scripts = document.getElementsByTagName('script');
         var nonce = false;
         for (var i = 0; i < scripts.length; i++) { if (scripts[i].nonce) { nonce = true; break; } }
-        var holder = document.getElementById('w');
         return 'url=' + location.host + location.pathname + ' | ' +
                'ts=' + (typeof turnstile) + ' ready=' + (typeof window.nsTurnstileReady) +
                ' rendered=' + (window.__nsRendered ? 'y' : 'n') +
+               ' wid=' + (window.__nsWid === undefined ? 'undef' : String(window.__nsWid)) +
                ' frames=' + document.getElementsByTagName('iframe').length +
-               ' w=' + (holder ? holder.offsetWidth + 'x' + holder.offsetHeight : '-') +
-               ' scripts=' + scripts.length + (nonce ? ' nonce' : '') +
                (window.__nsErr ? ' | ERR ' + window.__nsErr : '');
       }
       function paint() {
