@@ -748,17 +748,20 @@ private fun BoardFeed(
 
     // App 切后台时保存 —— 杀进程前一定先经过后台，这个兜住"杀进程"。
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, bottomPostId) {
+    // 用 rememberUpdatedState 拿最新的 bottomPostId，DisposableEffect 只跑一次 ——
+    // key 里不能带 bottomPostId，否则每次滚动都会触发 onDispose 误保存。
+    val latestBottomPostId by rememberUpdatedState(bottomPostId)
+    DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_PAUSE) {
-                bottomPostId?.let { onSavePosition(it) }
+                latestBottomPostId?.let { onSavePosition(it) }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
             // 退出列表（切版块/离开页面）时保存。
-            bottomPostId?.let { onSavePosition(it) }
+            latestBottomPostId?.let { onSavePosition(it) }
         }
     }
     // 综合 is the front page rather than a board, so it is the one place "read something else"
