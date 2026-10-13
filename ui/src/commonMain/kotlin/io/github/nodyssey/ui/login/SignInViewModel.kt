@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import io.github.nodyssey.data.session.AccountSessionStore
 import io.github.nodyssey.data.session.SessionRepository
 import io.github.nodyssey.data.session.SignInCredentials
 import io.github.nodyssey.data.session.SignInOutcome
@@ -46,6 +47,7 @@ class SignInViewModel(
     private val signIn: SignInRepository,
     private val session: SessionRepository,
     private val clock: AppClock,
+    private val accounts: AccountSessionStore,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SignInUiState())
     val uiState: StateFlow<SignInUiState> = _uiState.asStateFlow()
@@ -170,6 +172,18 @@ class SignInViewModel(
                 // accusing a sign-in that worked of not having worked is the one wrong answer this
                 // check must not give.
                 if (session.syncAwaitingSession().isSignedIn) {
+                    // 会话落定：收编为账号（首登建行、同 uid 去重）并设为当前。
+                    // AddAccount 模式进屏前已 checkpoint 旧账号 —— 见账号切换器的"添加账号"。
+                    //
+                    // 失败也不拦路：cookie 已经在罐子里了，会话是有效的；收编失败的孤儿会话由
+                    // NodysseyApp 的会话守护收编（ensureActiveAccount）。拦在这里只会把一个
+                    // 已经登录的用户晾在登录屏上。
+                    runCatchingExceptCancellation {
+                        accounts.adoptCurrentSession(
+                            username = accountState.text.toString(),
+                            password = passwordState.text.toString(),
+                        )
+                    }
                     _uiState.update { it.copy(isSubmitting = false, signedIn = true) }
                 } else {
                     // Back to card 1 whichever leg we are on: card 3 has nothing left to post, and
@@ -270,13 +284,16 @@ class SignInViewModel(
         /** Fine enough that the number never appears to skip, cheap enough to leave running. */
         const val TICK_MILLIS = 250L
 
-        fun factory(container: AppContainer): ViewModelProvider.Factory =
+        fun factory(
+            container: AppContainer,
+        ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
                     SignInViewModel(
                         signIn = container.signInRepository,
                         session = container.sessionRepository,
                         clock = container.clock,
+                        accounts = container.accountRepository,
                     )
                 }
             }

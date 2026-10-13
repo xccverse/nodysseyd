@@ -18,6 +18,7 @@ import io.github.nodyssey.data.composer.PostDraft
 import io.github.nodyssey.data.composer.PostSubmission
 import io.github.nodyssey.data.settings.SettingsRepository
 import io.github.nodyssey.data.testPreferenceStore
+import io.github.plaza.core.AppClock
 import io.github.plaza.core.net.SessionCookies
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,7 +43,8 @@ class DefaultAccountSignOutTest {
     fun `signing out clears every store the account left data in, then the session`() = runTest {
         val cookies = FakeSessionCookieStore()
         cookies.setCookie(NodeSeekSite.BASE_URL, "session=abc123")
-        val session = SessionRepository(SessionCookies(NodeSeekSite.CONFIG, cookies))
+        val sessionCookies = SessionCookies(NodeSeekSite.CONFIG, cookies)
+        val session = SessionRepository(sessionCookies)
         session.sync()
         assertTrue(session.state.value.isSignedIn)
 
@@ -54,15 +56,23 @@ class DefaultAccountSignOutTest {
         val settings = SettingsRepository(testPreferenceStore(backgroundScope, name = "sign-out"))
         settings.setNotificationSeenCounts(NotificationCounts(replies = 40, mentions = 3, messages = 7))
 
-        DefaultAccountSignOut(
-            posts = posts,
-            profiles = profiles,
-            offline = offline,
-            postDrafts = postDrafts,
-            commentDrafts = commentDrafts,
-            settings = settings,
-            session = session,
-        ).signOut()
+        // 多账号之后，退出走 AccountRepository：存盘当前会话 → 清场 → 清罐子 → 无 active。
+        val accounts =
+            AccountRepository(
+                dao = io.github.nodyssey.data.doubles.session.FakeAccountDao(),
+                cookies = sessionCookies,
+                session = session,
+                signIn = NoOpSignInRepository(),
+                profiles = profiles,
+                cipher = NoOpSecretCipher(),
+                clock = AppClock.System,
+                posts = posts,
+                offline = offline,
+                postDrafts = postDrafts,
+                commentDrafts = commentDrafts,
+                settings = settings,
+            )
+        DefaultAccountSignOut(accounts = accounts).signOut()
 
         // The downloaded copies: fetched signed in, and the row the review pinned this on —
         // "logout must fail closed" covers bytes on disk too.
@@ -151,4 +161,17 @@ private class RecordingCommentComposer : CommentComposerRepository {
     }
 
     override suspend fun publish(submission: CommentSubmission): Int? = null
+}
+
+private class NoOpSignInRepository : SignInRepository {
+    override suspend fun signIn(credentials: SignInCredentials): SignInOutcome = SignInOutcome.Signed
+
+    override suspend fun verifyTwoFactor(challenge: TwoFactorChallenge, code: String): SignInOutcome =
+        SignInOutcome.Signed
+}
+
+private class NoOpSecretCipher : io.github.nodyssey.data.security.SecretCipher {
+    override fun encrypt(plaintext: String): String? = null
+
+    override fun decrypt(stored: String): String = ""
 }

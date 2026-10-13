@@ -4,6 +4,17 @@
 
 ## Unreleased
 
+### 修复
+
+- iOS：切换账号、退出登录时同时清空 iOS 上的两套 Cookie 罐（App 请求读的 `NSHTTPCookieStorage` 与登录网页写的 WebKit `WKHTTPCookieStore`），修掉"切完仍停留在旧账号"的问题。
+  WebKit 那半只在会话结束时清、不在请求路径上碰：`WKHTTPCookieStore` 只在主队列应答，在 `setCookie` 里顺带写它会拖住发起请求的后台线程（dev.2 如此，表现为一直转圈、每个页面都报网络错误），故已改回只写 `NSHTTPCookieStorage`，并在清理时加了 2 秒上限。
+
+## 1.2.23-dev.1 - 2026-10-12
+
+### 新增
+
+- 多账号登录与切换：我的页面右上角可切换账号，每个账号的登录状态独立保存；支持记住密码，Cookie 过期后静默自动重登。
+
 ## 1.2.22 - 2026-10-09
 
 ### 新增

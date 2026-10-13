@@ -92,6 +92,7 @@ import io.github.nodyssey.data.proxy.NetworkProxyConnectionTester
 import io.github.nodyssey.data.proxy.ProxyClientKind
 import io.github.nodyssey.data.proxy.ProxyConnectionTester
 import io.github.nodyssey.data.proxy.ProxySettings
+import io.github.nodyssey.data.session.AccountRepository
 import io.github.nodyssey.data.session.AccountSignOut
 import io.github.nodyssey.data.session.DefaultAccountSignOut
 import io.github.nodyssey.data.session.NodeSeekSignInRepository
@@ -220,8 +221,11 @@ class DefaultAppContainer(
      */
     private val appScope = CoroutineScope(SupervisorJob() + dispatchers.default)
 
+    /** 密码加密 —— Keystore 存本机，换手机/清数据就丢，丢了就让用户重输。 */
+    private val secretCipher = KeystoreSecretCipher()
+
     override val proxySettings: ProxySettings by lazy {
-        DataStoreProxySettings(appContext.proxyDataStore, KeystoreSecretCipher())
+        DataStoreProxySettings(appContext.proxyDataStore, secretCipher)
     }
 
     /**
@@ -674,7 +678,7 @@ class DefaultAppContainer(
 
     override val imageHostRepository: ImageHostRepository by lazy {
         DefaultImageHostRepository(
-            settings = DataStoreImageHostSettings(appContext.imageHostDataStore, KeystoreSecretCipher()),
+            settings = DataStoreImageHostSettings(appContext.imageHostDataStore, secretCipher),
             // Not wrapped in `DynamicSignTransport`: that signature is NodeSeek's, and these are six
             // third parties. [transport] is the forum's.
             http = OkHttpTransport(imageHostClient),
@@ -710,14 +714,23 @@ class DefaultAppContainer(
     override val sessionRepository: SessionRepository by lazy { SessionRepository(sessionCookies) }
 
     override val accountSignOut: AccountSignOut by lazy {
-        DefaultAccountSignOut(
-            posts = postRepository,
+        DefaultAccountSignOut(accounts = accountRepository)
+    }
+
+    override val accountRepository: AccountRepository by lazy {
+        AccountRepository(
+            dao = database.accountDao(),
+            cookies = sessionCookies,
+            session = sessionRepository,
+            signIn = signInRepository,
             profiles = profileRepository,
+            cipher = secretCipher,
+            clock = clock,
+            posts = postRepository,
             offline = offlineLibrary,
             postDrafts = postComposerRepository,
             commentDrafts = commentComposerRepository,
             settings = settingsRepository,
-            session = sessionRepository,
         )
     }
 

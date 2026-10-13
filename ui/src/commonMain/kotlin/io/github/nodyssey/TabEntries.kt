@@ -1,8 +1,12 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package io.github.nodyssey
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.EntryProviderScope
@@ -14,6 +18,8 @@ import io.github.nodyssey.ui.messages.MessageThreadViewModel
 import io.github.nodyssey.ui.notifications.NotificationsRoute
 import io.github.nodyssey.ui.postlist.PostListRoute
 import io.github.nodyssey.ui.postlist.PostListViewModel
+import io.github.nodyssey.ui.profile.AccountSwitcherSheet
+import io.github.nodyssey.ui.profile.AccountSwitcherViewModel
 import io.github.nodyssey.ui.profile.ProfileDestinations
 import io.github.nodyssey.ui.profile.ProfileRoute
 import io.github.nodyssey.ui.profile.ProfileViewModel
@@ -149,6 +155,10 @@ internal fun EntryProviderScope<NavKey>.tabRootEntries(nav: StackEntryScope) = w
         val updateViewModel: UpdateReminderViewModel =
             viewModel(factory = UpdateReminderViewModel.factory(container))
         val hasUpdate by updateViewModel.hasUpdate.collectAsStateWithLifecycle()
+        // 多账号切换器 —— 跟 Profile 同一生死（退出登录重建 ProfileViewModel 时一起走）。
+        val accountSwitcherViewModel: AccountSwitcherViewModel =
+            viewModel(factory = AccountSwitcherViewModel.factory(container))
+        var showAccountSwitcher by remember { mutableStateOf(false) }
         ProfileRoute(
             viewModel = viewModel,
             // Board n1 made 我的 a directory of twenty tiles, so where each one goes travels as one
@@ -202,6 +212,22 @@ internal fun EntryProviderScope<NavKey>.tabRootEntries(nav: StackEntryScope) = w
             onVerify = { url ->
                 backStack.add(WebKey(url, siteTitle, WebViewGoal.CHALLENGE))
             },
+            onSwitchAccount = { showAccountSwitcher = true },
         )
+        // 多账号切换器 BottomSheet。
+        if (showAccountSwitcher) {
+            AccountSwitcherSheet(
+                viewModel = accountSwitcherViewModel,
+                onAddAccount = {
+                    showAccountSwitcher = false
+                    backStack.add(SignInKey)
+                },
+                onReLogin = { accountId ->
+                    showAccountSwitcher = false
+                    backStack.add(SignInKey)
+                },
+                onDismiss = { showAccountSwitcher = false },
+            )
+        }
     }
 }

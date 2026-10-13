@@ -33,6 +33,7 @@ import io.github.nodyssey.data.dns.DohSupport
 import io.github.nodyssey.data.imagehost.ImageHostRepository
 import io.github.nodyssey.data.proxy.ProxyConnectionTester
 import io.github.nodyssey.data.proxy.ProxySettings
+import io.github.nodyssey.data.session.AccountRepository
 import io.github.nodyssey.data.session.AccountSignOut
 import io.github.nodyssey.data.session.SessionRepository
 import io.github.nodyssey.data.session.SignInRepository
@@ -105,6 +106,9 @@ interface AppContainer {
      * list of stores to clear — the lists are what drifted apart. See [AccountSignOut].
      */
     val accountSignOut: AccountSignOut
+
+    /** 多账号：账号列表、切换、快照、静默重登。 */
+    val accountRepository: AccountRepository
 
     /** 登录 · 原生表单 (h1). Apart from [sessionRepository], which only reads the cookie jar. */
     val signInRepository: SignInRepository

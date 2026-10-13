@@ -107,6 +107,34 @@ class SessionCookies(
     }
 
     /**
+     * 多账号：把罐子里的会话导出为快照（name/value 对）。
+     *
+     * [SiteConfig.unreplayableCookies] 不导出 —— 那是站点绑机器的，用别的机器重放会被拒绝，
+     * 存了也没用。Cloudflare 的噪音 cookie 也不导出（`isCloudflareNoise`），它们自己会再来。
+     */
+    fun exportSessionCookies(): List<Pair<String, String>> =
+        config.sessionUrls
+            .flatMap(::cookiePairs)
+            .filterNot { (name, _) -> name in config.unreplayableCookies || isCloudflareNoise(name) }
+            .distinctBy { (name, _) -> name }
+
+    /**
+     * 多账号：把快照写回罐子。
+     *
+     * 先清空再写 —— 罐子一次只装一个账号，残留的上一个账号的 cookie 会污染会话。
+     * 写回 [SiteConfig.sessionUrls] 的每一站，path=/。
+     */
+    suspend fun importSessionCookies(snapshot: List<Pair<String, String>>) {
+        store.removeAll()
+        snapshot.forEach { (name, value) ->
+            config.sessionUrls.forEach { url ->
+                store.setCookie(url, "$name=$value; Path=/")
+            }
+        }
+        store.flush()
+    }
+
+    /**
      * True for the cookies Cloudflare manages on its own schedule: the bot-management cookie, the
      * per-visitor id, and the challenge intermediates that churn on every tick of a live challenge.
      *

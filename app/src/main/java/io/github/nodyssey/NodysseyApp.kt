@@ -142,6 +142,20 @@ open class NodysseyApp :
                 .distinctUntilChanged()
                 .collect { eink -> EinkAwareCrossfade.crossfading = !eink }
         }
+        // 多账号：老用户会话收编 + 会话守护。
+        // 迁移：v20 升 v21 时账号表是空的，有登录态的老用户在这里把当前会话收编为第一个账号。
+        // 守护：罐子里有会话但 active 行丢了（网页登录易主）→ 认领；active 还在但罐子空了 →
+        // 拿记住的密码静默重登一次。都不成功就保持现状，UI 会引导用户登录。
+        applicationScope.launch {
+            val accounts = container.accountRepository
+            accounts.migrateIfNeeded()
+            val session = container.sessionRepository
+            if (session.peek().isSignedIn) {
+                accounts.ensureActiveAccount()
+            } else {
+                accounts.trySilentReLogin()
+            }
+        }
     }
 
     /**
