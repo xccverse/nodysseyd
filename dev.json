@@ -4,12 +4,12 @@
   "versionName": "1.2.23-dev.4",
   "tag": "v1.2.23-dev.4",
   "publishedOn": "2026-10-13",
-  "notes": "测试版，由 tag `v1.2.23-dev.4` 构建。不是正式版本，可能不稳定。\n\n### 新增\n\n- 首页/版块列表记住滚动位置：退出、刷新或杀进程时，记住当时屏幕最上面那条帖子；下次进来在它上面画一条\"上次看到这里\"的线。按版块和排序分别记。\n\n**Full Changelog**: https://github.com/xccverse/nodysseyd/compare/v1.2.23-dev.3...v1.2.23-dev.4",
+  "notes": "测试版，由 tag `v1.2.23-dev.4` 构建。不是正式版本，可能不稳定。\n\n### 新增\n\n- 首页/版块列表记住滚动位置：切后台、退出列表或杀进程时，记住当时屏幕最下面那条帖子（\"读到这里\"）；下次进来在它上面画一条\"上次看到这里\"的线。按版块和排序分别记。\n\n**Full Changelog**: https://github.com/xccverse/nodysseyd/compare/v1.2.23-dev.3...v1.2.23-dev.4",
   "apk": {
     "name": "nodyssey-v1.2.23-dev.4.apk",
     "url": "https://github.com/xccverse/nodysseyd/releases/download/v1.2.23-dev.4/nodyssey-v1.2.23-dev.4.apk",
     "sizeBytes": 6285227,
-    "sha256": "10b12518f31425ad3a5be535d4c8788888013450c5be7b4f6ddee8693b4ccfc4"
+    "sha256": "b9804d384905401f219549d191d117b450ee97db548dc3e2ecc18b30651ae099"
   },
   "releaseUrl": "https://github.com/xccverse/nodysseyd/releases/tag/v1.2.23-dev.4"
 }
