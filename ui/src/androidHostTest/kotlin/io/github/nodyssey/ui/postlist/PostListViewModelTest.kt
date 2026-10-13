@@ -239,13 +239,13 @@ class PostListViewModelTest {
     /**
      * 滚动位置记忆的四个测试。
      *
-     * 1. saveScrollPosition 把 postId 存进库并更新 UiState
+     * 1. saveScrollPosition 只把 postId 存进库，**不动** UiState（线只在重新进来时画）
      * 2. loadRememberedPosition 把库里的 postId 读进 UiState
      * 3. 不同版块/排序的位置互不干扰
      * 4. 没记过的位置读出来是 null
      */
     @Test
-    fun `saveScrollPosition stores the post id and updates UiState`() =
+    fun `saveScrollPosition stores the post id without touching UiState`() =
         runTest(dispatcher) {
             val vm = viewModel()
             advanceUntilIdle()
@@ -253,7 +253,11 @@ class PostListViewModelTest {
             vm.saveScrollPosition(12345L)
             advanceUntilIdle()
 
-            assertEquals(12345L, vm.uiState.value.rememberedPostId)
+            // 位置确实落库了
+            val stored = OfflineFirstPostRepository(database, remote, clock)
+            assertEquals(12345L, stored.boardScrollPosition(null, FeedSort.LAST_REPLY))
+            // 但界面状态不动 —— 否则保存时同步更新会让线一直粘在屏幕上（只在重进时才画）
+            assertNull(vm.uiState.value.rememberedPostId)
         }
 
     @Test
