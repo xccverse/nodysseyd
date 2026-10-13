@@ -261,8 +261,12 @@ private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: 
         append("'expired-callback':function(){").append(TURNSTILE_BRIDGE).append(".post('expired','');},")
         append("'timeout-callback':function(){").append(TURNSTILE_BRIDGE).append(".post('expired','');},")
         append("'error-callback':function(e){").append(TURNSTILE_BRIDGE).append(".post('error',String(e||''));}")
-        append("});}catch(e){window.__nsErr='render: '+e;}};")
+        append("});}catch(e){window.__nsErr='render: '+e;}window.__nsRendered=true;};")
         append("window.__nsErr=null;")
+        // 兜底：Cloudflare 的加载器偶尔会比上面的定义先跑完，那它按名字调 onload 就没人应答 ——
+        // 一秒半后自己补一次（带 rendered 标志，不会重复渲染）。
+        append("setTimeout(function(){if(!window.__nsRendered){")
+        append("try{window.nsTurnstileReady();}catch(e){window.__nsErr='retry: '+e;}}},1500);")
         append("}catch(e){window.__nsErr='inject: '+e;}")
     }
 }
@@ -312,8 +316,12 @@ private val DIAGNOSTIC_SHIM =
         var scripts = document.getElementsByTagName('script');
         var nonce = false;
         for (var i = 0; i < scripts.length; i++) { if (scripts[i].nonce) { nonce = true; break; } }
+        var holder = document.getElementById('w');
         return 'url=' + location.host + location.pathname + ' | ' +
-               'turnstile=' + (typeof turnstile) + ' ready=' + (typeof window.nsTurnstileReady) +
+               'ts=' + (typeof turnstile) + ' ready=' + (typeof window.nsTurnstileReady) +
+               ' rendered=' + (window.__nsRendered ? 'y' : 'n') +
+               ' frames=' + document.getElementsByTagName('iframe').length +
+               ' w=' + (holder ? holder.offsetWidth + 'x' + holder.offsetHeight : '-') +
                ' scripts=' + scripts.length + (nonce ? ' nonce' : '') +
                (window.__nsErr ? ' | ERR ' + window.__nsErr : '');
       }
