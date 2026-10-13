@@ -1,15 +1,15 @@
 {
   "schema": 1,
   "channel": "dev",
-  "versionName": "1.2.23-dev.1",
-  "tag": "v1.2.23-dev.1",
-  "publishedOn": "2026-10-12",
-  "notes": "测试版，由 tag `v1.2.23-dev.1` 构建。不是正式版本，可能不稳定。",
+  "versionName": "1.2.23-dev.2",
+  "tag": "v1.2.23-dev.2",
+  "publishedOn": "2026-10-13",
+  "notes": "测试版，由 tag `v1.2.23-dev.2` 构建。不是正式版本，可能不稳定。\n\n### 修复\n\n- iOS：切换账号时同时清空 App 请求与登录网页各自的 Cookie 罐（`NSHTTPCookieStorage` 与 WebKit 的 `WKHTTPCookieStore`），修掉\"切完仍停留在旧账号\"的问题；退出登录同样清两套，避免下一次打开登录页把旧账号的 Cookie 倒回来。\n\n**Full Changelog**: https://github.com/xccverse/nodysseyd/compare/v1.2.23-dev.1...v1.2.23-dev.2",
   "apk": {
-    "name": "nodyssey-v1.2.23-dev.1.apk",
-    "url": "https://github.com/xccverse/nodysseyd/releases/download/v1.2.23-dev.1/nodyssey-v1.2.23-dev.1.apk",
+    "name": "nodyssey-v1.2.23-dev.2.apk",
+    "url": "https://github.com/xccverse/nodysseyd/releases/download/v1.2.23-dev.2/nodyssey-v1.2.23-dev.2.apk",
     "sizeBytes": 6285163,
-    "sha256": "f4dbf65f9733bde57d323779cfc40e947c750164e450aed514361ec076ef5d45"
+    "sha256": "5e0a86fb99f5cdad7e0c2c6cfbc4ea7a11ffe2e0b271f4926cf18dd8378368f5"
   },
-  "releaseUrl": "https://github.com/xccverse/nodysseyd/releases/tag/v1.2.23-dev.1"
+  "releaseUrl": "https://github.com/xccverse/nodysseyd/releases/tag/v1.2.23-dev.2"
 }
