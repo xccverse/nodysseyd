@@ -748,6 +748,7 @@
     <string name="status_empty_feed_title">No posts here yet</string>
     <string name="status_empty_feed_body">This board is empty for now — try another one</string>
     <string name="status_empty_feed_action">Another board</string>
+    <string name="feed_last_position_label">Last viewed here</string>
     <string name="status_empty_ledger_title">Nothing recorded yet</string>
     <string name="status_empty_ledger_body">Once something comes in or goes out, it is listed here by time</string>
 

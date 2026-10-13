@@ -274,6 +274,33 @@ class PostListViewModel(
         repository.feedRowIndexOfPage(_uiState.value.categorySlug, _uiState.value.sort, page)
 
     /**
+     * 读出当前（版块，排序）记住的位置。进列表时调，读到了就在那条帖子上画线。
+     */
+    fun loadRememberedPosition() {
+        val slug = _uiState.value.categorySlug
+        val sort = _uiState.value.sort
+        viewModelScope.launch {
+            val postId = repository.boardScrollPosition(slug, sort)
+            _uiState.update { it.copy(rememberedPostId = postId) }
+        }
+    }
+
+    /**
+     * 记住当前位置。退出、刷新、滚动停稳后调 —— 下次进来画线用。
+     *
+     * 只记不清空：刷新后列表重载，线还在那条帖子上。
+     */
+    fun saveScrollPosition(postId: Long) {
+        val slug = _uiState.value.categorySlug
+        val sort = _uiState.value.sort
+        viewModelScope.launch {
+            repository.saveBoardScrollPosition(slug, sort, postId)
+            // 记完就把线也更新到最新位置 —— 免得旧线还留在上面。
+            _uiState.update { it.copy(rememberedPostId = postId) }
+        }
+    }
+
+    /**
      * Commits an edit made on the strip itself: the new left-to-right order, and which boards are
      * parked at the tail.
      *
@@ -376,6 +403,12 @@ data class PostListUiState(
     val startPages: Map<String?, Int> = emptyMap(),
     /** How many pages the site says this feed has, as of the last page stored. */
     val totalPages: Int = 1,
+    /**
+     * 上次离开时记下的位置 —— "退出/刷新那一刻屏幕上最上面那条帖子"的 postId。
+     *
+     * 按（版块，排序）分别记。null = 没记过，不画线。读到新值时 UI 在那条帖子上面画线。
+     */
+    val rememberedPostId: Long? = null,
 ) {
     /**
      * The selected board's name, or null on the mixed front page.

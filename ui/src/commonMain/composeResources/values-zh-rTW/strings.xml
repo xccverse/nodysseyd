@@ -742,6 +742,7 @@
     <string name="status_empty_feed_title">這裡還沒有文章</string>
     <string name="status_empty_feed_body">這個版塊暫時是空的，去別的版塊看看</string>
     <string name="status_empty_feed_action">換個版塊</string>
+    <string name="feed_last_position_label">上次看到這裡</string>
     <string name="status_empty_ledger_title">還沒有明細</string>
     <string name="status_empty_ledger_body">等有了收支，這裡就會依時間列出來</string>
 

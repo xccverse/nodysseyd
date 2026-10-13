@@ -905,6 +905,8 @@
     <string name="status_empty_feed_title">这里还没有帖子</string>
     <string name="status_empty_feed_body">这个版块暂时是空的，去别的版块看看</string>
     <string name="status_empty_feed_action">换个版块</string>
+    <!-- 滚动位置记忆：上次看到这里的分隔线 -->
+    <string name="feed_last_position_label">上次看到这里</string>
     <string name="status_empty_ledger_title">还没有流水</string>
     <string name="status_empty_ledger_body">等有了收支，这里就会按时间列出来</string>
 

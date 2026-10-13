@@ -157,6 +157,7 @@ import io.github.plaza.designsys.theme.cardBorderStroke
 import io.github.plaza.designsys.theme.cardShadow
 import io.github.plaza.designsys.theme.readableWidth
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapNotNull
@@ -206,6 +207,8 @@ fun PostListRoute(
         modifier = modifier,
         onNavigationBarHiddenChanged = onNavigationBarHiddenChanged,
         reselectRequests = reselectRequests,
+        onSavePosition = viewModel::saveScrollPosition,
+        onLoadRememberedPosition = viewModel::loadRememberedPosition,
     )
 }
 
@@ -261,6 +264,10 @@ fun PostListScreen(
      * lets two taps in a row read as two requests without the host having to clear a flag afterwards.
      */
     reselectRequests: Int = 0,
+    /** 滚动停稳后记住顶部帖子，下次进来画线。 */
+    onSavePosition: (Long) -> Unit = {},
+    /** 进列表（版块/排序变化）时读出记住的位置。 */
+    onLoadRememberedPosition: () -> Unit = {},
 ) {
     /*
      * 左右滑动切换板块.
@@ -277,6 +284,11 @@ fun PostListScreen(
     val boards = state.boards
     val selectedIndex = boards.indexOfFirst { it.slug == state.categorySlug }.coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = selectedIndex) { boards.size }
+
+    // 版块/排序变了就读出记住的位置 —— 下次进来在那条帖子上画线。
+    LaunchedEffect(state.categorySlug, state.sort) {
+        onLoadRememberedPosition()
+    }
 
     /*
      * The selected board's rows and its place in them: what the chrome around the pager is about —
@@ -634,6 +646,8 @@ fun PostListScreen(
                     navigationBarScrollConnection = navigationBarScrollConnection,
                     topBarScrollBehavior = topBarScrollBehavior,
                     bottomInset = bottomInset,
+                    rememberedPostId = state.rememberedPostId.takeIf { board.slug == state.categorySlug },
+                    onSavePosition = onSavePosition,
                 )
             }
 
@@ -708,10 +722,26 @@ private fun BoardFeed(
     topBarScrollBehavior: TopAppBarScrollBehavior,
     /** The bottom bar's height, which the list scrolls under rather than stopping at. */
     bottomInset: Dp,
+    /** 上次记住的位置，画线用。null = 没记过。 */
+    rememberedPostId: Long? = null,
+    /** 滚动停稳后记住顶部帖子。 */
+    onSavePosition: (Long) -> Unit = {},
 ) {
     val refreshState = posts.loadState.refresh
     val appendState = posts.loadState.append
     val showSkeleton = posts.itemCount == 0 && refreshState is LoadState.Loading
+
+    // 滚动停稳 1 秒后记住顶部帖子 —— 退出、刷新、杀进程三种时机都靠它兜底。
+    // 用 peek 不触发加载：只读已在内存里的行。
+    LaunchedEffect(listState, posts) {
+        snapshotFlow { listState.firstVisibleItemIndex }
+            .debounce(1000)
+            .collect { index ->
+                if (index < posts.itemCount) {
+                    posts.peek(index)?.summary?.postId?.let { onSavePosition(it) }
+                }
+            }
+    }
     // 综合 is the front page rather than a board, so it is the one place "read something else"
     // cannot point at.
     val elsewhere = onBrowseElsewhere.takeIf { board.slug != null }
@@ -795,12 +825,17 @@ private fun BoardFeed(
                             when (val post = posts[index]) {
                                 null -> FeedRowPlaceholder()
 
-                                else ->
+                                else -> {
+                                    // 上次看到这里：在记住的帖子上面画一条线。
+                                    if (rememberedPostId != null && post.summary.postId == rememberedPostId) {
+                                        LastPositionDivider()
+                                    }
                                     PostRow(
                                         post = post,
                                         onClick = { onPostClick(post) },
                                         sharedWithThread = true,
                                     )
+                                }
                             }
                         }
                         if (appendState is LoadState.Loading) {
@@ -1619,6 +1654,36 @@ internal fun previewFeed(): Flow<PagingData<FeedPost>> =
             ),
         ),
     )
+
+/**
+ * "上次看到这里"分隔线：画在记住的那条帖子上面。
+ *
+ * 一条细线 + 居中文字，线的颜色用主题的 primary，字用 onSurfaceVariant。
+ */
+@Composable
+private fun LastPositionDivider() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = stringResource(Res.string.feed_last_position_label),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        )
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 800, name = "Post list")
 @Composable

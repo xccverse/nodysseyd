@@ -9,6 +9,7 @@ import androidx.paging.PagingData
 import androidx.paging.map
 import io.github.nodyssey.data.local.CacheSessionEntity
 import io.github.nodyssey.data.local.CommentEntity
+import io.github.nodyssey.data.local.BoardScrollPositionEntity
 import io.github.nodyssey.data.local.FeedPostRow
 import io.github.nodyssey.data.local.NodeSeekDatabase
 import io.github.nodyssey.data.local.ReadHistoryRow
@@ -142,6 +143,25 @@ interface PostRepository {
         sort: FeedSort,
         page: Int,
     ): Int?
+
+    /**
+     * 滚动位置记忆：记住"退出/刷新那一刻屏幕上最上面那条帖子"。
+     *
+     * 按（版块，排序）分别记。`categorySlug` 为 null = 首页。
+     */
+    suspend fun saveBoardScrollPosition(
+        categorySlug: String?,
+        sort: FeedSort,
+        postId: Long,
+    )
+
+    /**
+     * 读出记住的滚动位置，没有记过返回 null。
+     */
+    suspend fun boardScrollPosition(
+        categorySlug: String?,
+        sort: FeedSort,
+    ): Long?
 
     /**
      * The site's own `/search?q=…`, read exactly like a board feed.
@@ -405,6 +425,30 @@ class OfflineFirstPostRepository(
         val sortIndex = dao.firstSortIndexOnPage(feedKey, page, includeBlocked) ?: return null
         return dao.countRowsBefore(feedKey, sortIndex, includeBlocked)
     }
+
+    override suspend fun saveBoardScrollPosition(
+        categorySlug: String?,
+        sort: FeedSort,
+        postId: Long,
+    ) {
+        database.boardScrollPositionDao().upsert(
+            BoardScrollPositionEntity(
+                boardSlug = categorySlug ?: BoardScrollPositionEntity.HOME_BOARD_SLUG,
+                sort = sort.name,
+                postId = postId,
+                updatedAtMillis = clock.nowMillis(),
+            ),
+        )
+    }
+
+    override suspend fun boardScrollPosition(
+        categorySlug: String?,
+        sort: FeedSort,
+    ): Long? =
+        database.boardScrollPositionDao().find(
+            boardSlug = categorySlug ?: BoardScrollPositionEntity.HOME_BOARD_SLUG,
+            sort = sort.name,
+        )?.postId
 
     override fun searchFeed(
         query: String,

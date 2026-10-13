@@ -42,8 +42,9 @@ import androidx.sqlite.execSQL
         AccountEntity::class,
         AccountSessionEntity::class,
         ActiveAccountEntity::class,
+        BoardScrollPositionEntity::class,
     ],
-    version = 21,
+    version = 22,
     exportSchema = true,
 )
 @TypeConverters(RichContentConverters::class)
@@ -76,6 +77,8 @@ abstract class NodeSeekDatabase : RoomDatabase() {
     abstract fun stickerDao(): StickerDao
 
     abstract fun accountDao(): AccountDao
+
+    abstract fun boardScrollPositionDao(): BoardScrollPositionDao
 }
 
 /**
@@ -534,6 +537,29 @@ val MIGRATION_20_21 =
         }
     }
 
+
+/**
+ * 滚动位置记忆：新建 `board_scroll_positions` 表。
+ *
+ * 空表建出来就行 —— 老用户没有记过的位置，下次进来不画线。
+ */
+val MIGRATION_21_22 =
+    object : Migration(21, 22) {
+        override fun migrate(connection: SQLiteConnection) {
+            connection.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `board_scroll_positions` (
+                    `boardSlug` TEXT NOT NULL,
+                    `sort` TEXT NOT NULL,
+                    `postId` INTEGER NOT NULL,
+                    `updatedAtMillis` INTEGER NOT NULL,
+                    PRIMARY KEY(`boardSlug`, `sort`)
+                )
+                """.trimIndent(),
+            )
+        }
+    }
+
 /**
  * Every migration this schema has, in order — the list `createNodeSeekDatabase` opens the file with.
  *
@@ -565,4 +591,5 @@ val NODESEEK_MIGRATIONS = arrayOf(
     MIGRATION_18_19,
     MIGRATION_19_20,
     MIGRATION_20_21,
+    MIGRATION_21_22,
 )
