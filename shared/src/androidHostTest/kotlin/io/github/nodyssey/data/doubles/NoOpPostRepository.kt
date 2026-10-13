@@ -29,6 +29,17 @@ internal open class NoOpPostRepository : PostRepository {
         page: Int,
     ): Int? = null
 
+    override suspend fun saveBoardScrollPosition(
+        categorySlug: String?,
+        sort: FeedSort,
+        postId: Long,
+    ) = Unit
+
+    override suspend fun boardScrollPosition(
+        categorySlug: String?,
+        sort: FeedSort,
+    ): Long? = null
+
     override fun searchFeed(
         query: String,
         categorySlug: String?,
