@@ -1,15 +1,15 @@
 {
   "schema": 1,
   "channel": "dev",
-  "versionName": "1.2.23-dev.3",
-  "tag": "v1.2.23-dev.3",
+  "versionName": "1.2.23-dev.4",
+  "tag": "v1.2.23-dev.4",
   "publishedOn": "2026-10-13",
-  "notes": "测试版，由 tag `v1.2.23-dev.3` 构建。不是正式版本，可能不稳定。\n\n### 修复\n\n- iOS：切换账号、退出登录时同时清空 iOS 上的两套 Cookie 罐（App 请求读的 `NSHTTPCookieStorage` 与登录网页写的 WebKit `WKHTTPCookieStore`），修掉\"切完仍停留在旧账号\"的问题。\n  WebKit 那半只在会话结束时清、不在请求路径上碰：`WKHTTPCookieStore` 只在主队列应答，在 `setCookie` 里顺带写它会拖住发起请求的后台线程（dev.2 如此，表现为一直转圈、每个页面都报网络错误），故已改回只写 `NSHTTPCookieStorage`，并在清理时加了 2 秒上限。\n\n**Full Changelog**: https://github.com/xccverse/nodysseyd/compare/v1.2.23-dev.2...v1.2.23-dev.3",
+  "notes": "测试版，由 tag `v1.2.23-dev.4` 构建。不是正式版本，可能不稳定。\n\n### 新增\n\n- 首页/版块列表记住滚动位置：退出、刷新或杀进程时，记住当时屏幕最上面那条帖子；下次进来在它上面画一条\"上次看到这里\"的线。按版块和排序分别记。\n\n**Full Changelog**: https://github.com/xccverse/nodysseyd/compare/v1.2.23-dev.3...v1.2.23-dev.4",
   "apk": {
-    "name": "nodyssey-v1.2.23-dev.3.apk",
-    "url": "https://github.com/xccverse/nodysseyd/releases/download/v1.2.23-dev.3/nodyssey-v1.2.23-dev.3.apk",
-    "sizeBytes": 6285163,
-    "sha256": "9763deababa15c165939989de399e7a4ab5295b40d9aad93b974cdd564c272be"
+    "name": "nodyssey-v1.2.23-dev.4.apk",
+    "url": "https://github.com/xccverse/nodysseyd/releases/download/v1.2.23-dev.4/nodyssey-v1.2.23-dev.4.apk",
+    "sizeBytes": 6285227,
+    "sha256": "10b12518f31425ad3a5be535d4c8788888013450c5be7b4f6ddee8693b4ccfc4"
   },
-  "releaseUrl": "https://github.com/xccverse/nodysseyd/releases/tag/v1.2.23-dev.3"
+  "releaseUrl": "https://github.com/xccverse/nodysseyd/releases/tag/v1.2.23-dev.4"
 }
