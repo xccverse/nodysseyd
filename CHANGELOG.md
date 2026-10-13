@@ -12,6 +12,8 @@
 
 - iOS：切换账号、退出登录时同时清空 iOS 上的两套 Cookie 罐（App 请求读的 `NSHTTPCookieStorage` 与登录网页写的 WebKit `WKHTTPCookieStore`），修掉"切完仍停留在旧账号"的问题。
   WebKit 那半只在会话结束时清、不在请求路径上碰：`WKHTTPCookieStore` 只在主队列应答，在 `setCookie` 里顺带写它会拖住发起请求的后台线程（dev.2 如此，表现为一直转圈、每个页面都报网络错误），故已改回只写 `NSHTTPCookieStorage`，并在清理时加了 2 秒上限。
+- iOS：修掉"原生登录不可用，只能改用网页登录"。人机验证（Cloudflare Turnstile）在 iOS 上一直起不来，是因为验证页是用 `loadHTMLString` 塞进 WebView 的——那个文档没有真实来源，而 sitekey 绑定了它允许渲染的主机名，Turnstile 会在画出勾选框之前就拒绝，于是登录按钮恒为禁用。
+  现在先真正导航到站点自己的 https 源，再把同一段验证页 `document.write` 进去（写进去的文档继承来源），iOS 因此也能像安卓那样在 App 内直接输账号密码登录。
 
 ## 1.2.23-dev.1 - 2026-10-12
 
