@@ -39,17 +39,22 @@ import platform.darwin.NSObject
  * document start defines `__nsBridge` over that, so [turnstileDocument] does not have to know which
  * host it landed in.
  *
- * Two things Apple cannot copy from Android, and both are about where the markup is allowed to live:
+ * Android's one call — `loadDataWithBaseURL` — does not translate, and the difference runs in three
+ * steps, each of which is a way for this platform to lose the widget:
  *
- * 1. Android's `loadDataWithBaseURL` keeps the document's origin; `loadHTMLString` does not. A sitekey
- *    is bound to the hostnames it may be rendered on, so a widget whose document has no origin is
- *    refused before the user ever sees a checkbox — which is what left this platform with nothing but
- *    「改用网页登录」. The view is therefore navigated to the site's own https origin, and the markup
- *    is written into that page once it finishes: `document.write` keeps the creating origin.
+ * 1. `loadHTMLString` documents have no origin. A sitekey is bound to the hostnames it may be
+ *    rendered on, so such a widget is refused before the user sees a checkbox. The view is therefore
+ *    navigated to the site's own https origin, and the markup is written into that page once it
+ *    finishes — `document.write` keeps the creating origin.
  * 2. That page brings its Content-Security-Policy along, and the site's policy allows only
- *    nonce-carrying inline scripts. The markup's own `<script>` carries no nonce, so it never runs and
- *    Cloudflare's loader finds nothing to call under `onload`. The injection hands the written tags
- *    the page's nonce and defines the two entry points itself, so the widget comes up either way.
+ *    nonce-carrying inline scripts. The markup's own `<script>` carries no nonce, so the injection
+ *    hands the written tags the page's nonce and defines the two entry points itself.
+ * 3. Loading a real page, rather than a string, means redirects and `www.` — a stricter host test
+ *    than [isSameSite] cancels the redirect that lands on the real origin, and then nothing finishes.
+ *
+ * [DIAGNOSTIC_SHIM] is a temporary read-out: it paints the loaded URL and the widget's own state
+ * across the top of the strip. It exists to be screenshotted on a device this project cannot build
+ * for locally; remove it once the widget is confirmed on real hardware.
  *
  * Contained the same way the Android actual is: only the site's own host may load, every other
  * main-frame navigation is cancelled, and the page is never handed a URL it can follow out.
@@ -110,14 +115,16 @@ actual fun TurnstileWidget(
 private fun newTurnstileWebView(userAgent: UserAgent, host: TurnstileHost): WKWebView {
     val controller = WKUserContentController()
     controller.addScriptMessageHandler(host, TURNSTILE_BRIDGE)
-    controller.addUserScript(
-        WKUserScript(
-            source = BRIDGE_SHIM,
-            injectionTime = WKUserScriptInjectionTime.WKUserScriptInjectionTimeAtDocumentStart,
-            // The shim has to exist in the frame the widget's own script runs in, and only there.
-            forMainFrameOnly = true,
-        ),
-    )
+    for (source in listOf(BRIDGE_SHIM, DIAGNOSTIC_SHIM)) {
+        controller.addUserScript(
+            WKUserScript(
+                source = source,
+                injectionTime = WKUserScriptInjectionTime.WKUserScriptInjectionTimeAtDocumentStart,
+                // Both have to exist in the frame the widget's own script runs in, and only there.
+                forMainFrameOnly = true,
+            ),
+        )
+    }
     val configuration = WKWebViewConfiguration()
     configuration.userContentController = controller
     configuration.websiteDataStore = WKWebsiteDataStore.defaultDataStore()
@@ -151,7 +158,7 @@ private class TurnstileHost(
 
     private var hasWrittenDocument = false
 
-    /** The only host this view may load from — the site the sitekey is registered against. */
+    /** The host the sitekey is registered against — `www.` and the bare domain are both it. */
     private val siteHost: String? = NSURL.URLWithString(NodeSeekSite.BASE_URL)?.host
 
     override fun userContentController(
@@ -172,31 +179,28 @@ private class TurnstileHost(
      * The site's own page has loaded — now put the widget's markup in it.
      *
      * Written once: the markup carries no navigations of its own, and a second write would restart
-     * the challenge the user may already have passed. Only the site's own host qualifies — an
-     * interstitial served from anywhere else must not have the widget written into it, or the
+     * the challenge the user may already have passed. Anything not on the site's own host is left
+     * alone — an interstitial served from elsewhere must not have the widget written into it, or the
      * sitekey would be rendered on a hostname it is not registered for.
      */
     override fun webView(webView: WKWebView, didFinishNavigation: WKNavigation?) {
         if (hasWrittenDocument) return
-        if (webView.URL?.host != siteHost) return
+        if (!isSameSite(webView.URL?.host, siteHost)) return
         hasWrittenDocument = true
         webView.evaluateJavaScript(widgetInjectionScript(document, sitekey, darkTheme), null)
     }
 
     /**
-     * The site's own host, and nothing else.
+     * The site's own host, and nothing else — see [isSameSite] for why it is not an equality test.
      *
-     * A host test rather than the first-load count this used to be: the navigation now goes to a real
-     * page, which may redirect within the site, and a count would have cancelled the redirect. The
-     * widget's own iframe is a subframe load and never reaches here.
+     * The widget's own iframe is a subframe load and never reaches here.
      */
     override fun webView(
         webView: WKWebView,
         decidePolicyForNavigationAction: WKNavigationAction,
         decisionHandler: (WKNavigationActionPolicy) -> Unit,
     ) {
-        val target = decidePolicyForNavigationAction.request.URL
-        val staysOnSite = target != null && target.host != null && target.host == siteHost
+        val staysOnSite = isSameSite(decidePolicyForNavigationAction.request.URL?.host, siteHost)
         decisionHandler(
             if (staysOnSite) {
                 WKNavigationActionPolicy.WKNavigationActionPolicyAllow
@@ -205,6 +209,19 @@ private class TurnstileHost(
             },
         )
     }
+}
+
+/**
+ * Whether a host belongs to the site.
+ *
+ * `www.` and the bare domain are the same site to the sitekey and to the redirect that gets there,
+ * but not to `==`. Comparing with a strict equality cancelled the redirect from `BASE_URL` to its
+ * `www.` form, and a cancelled redirect finishes nothing: `didFinish` never ran, so the markup was
+ * never written and the strip stayed empty.
+ */
+private fun isSameSite(host: String?, siteHost: String?): Boolean {
+    if (host == null || siteHost == null) return false
+    return host == siteHost || host.endsWith(".$siteHost") || siteHost.endsWith(".$host")
 }
 
 /**
@@ -221,18 +238,21 @@ private class TurnstileHost(
  * 4. Define `nsTurnstileReady` and `nsTurnstileReset` here rather than trusting the markup's own copy,
  *    which may or may not have been allowed through. Cloudflare's loader calls the former by name
  *    (`onload=…`), so it has to exist under exactly that name either way.
+ *
+ * The whole of it sits in a `try`, and whatever it throws lands in `__nsErr` — which is what
+ * [DIAGNOSTIC_SHIM] paints, so a failure on a device says which one it was instead of showing a
+ * blank strip.
  */
 private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: Boolean): String {
     val theme = if (darkTheme) "dark" else "light"
     return buildString {
-        append("(function(){")
+        append("try{")
         append("var n='';var s=document.getElementsByTagName('script');")
         append("for(var i=0;i<s.length;i++){if(s[i].nonce){n=s[i].nonce;break;}}")
         append("var h=").append(javaScriptStringLiteral(document)).append(";")
         append("if(n){h=h.split('<script').join('<script nonce=\"'+n+'\"');}")
         append("document.open();document.write(h);document.close();")
-        append("})();")
-        append('\n').append(BRIDGE_SHIM).append('\n')
+        append(BRIDGE_SHIM)
         append("window.nsTurnstileReset=function(){try{turnstile.reset();}catch(e){}};")
         append("window.nsTurnstileReady=function(){try{turnstile.render('#w',{")
         append("sitekey:").append(javaScriptStringLiteral(sitekey)).append(',')
@@ -241,7 +261,9 @@ private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: 
         append("'expired-callback':function(){").append(TURNSTILE_BRIDGE).append(".post('expired','');},")
         append("'timeout-callback':function(){").append(TURNSTILE_BRIDGE).append(".post('expired','');},")
         append("'error-callback':function(e){").append(TURNSTILE_BRIDGE).append(".post('error',String(e||''));}")
-        append("});}catch(e){").append(TURNSTILE_BRIDGE).append(".post('error',String(e));}};")
+        append("});}catch(e){window.__nsErr='render: '+e;}};")
+        append("window.__nsErr=null;")
+        append("}catch(e){window.__nsErr='inject: '+e;}")
     }
 }
 
@@ -272,4 +294,46 @@ private val BRIDGE_SHIM =
         window.webkit.messageHandlers.$TURNSTILE_BRIDGE.postMessage({ kind: kind, value: value });
       }
     };
+    """.trimIndent()
+
+/**
+ * Temporary: paints what this view actually loaded and what the widget thinks its state is.
+ *
+ * A `WKWebView` this size is invisible to every tool this project has — no log reaches a device that
+ * only the user is holding, and this file cannot be built off a Mac. So the view reports on itself:
+ * which URL finished, whether Cloudflare's script arrived, how many scripts the document has and
+ * whether any of them carries a nonce, plus anything the injection threw. A screenshot of the strip
+ * answers what a CI log would.
+ */
+private val DIAGNOSTIC_SHIM =
+    """
+    (function () {
+      function read() {
+        var scripts = document.getElementsByTagName('script');
+        var nonce = false;
+        for (var i = 0; i < scripts.length; i++) { if (scripts[i].nonce) { nonce = true; break; } }
+        return 'url=' + location.host + location.pathname + ' | ' +
+               'turnstile=' + (typeof turnstile) + ' ready=' + (typeof window.nsTurnstileReady) +
+               ' scripts=' + scripts.length + (nonce ? ' nonce' : '') +
+               (window.__nsErr ? ' | ERR ' + window.__nsErr : '');
+      }
+      function paint() {
+        var box = document.getElementById('nsDiag');
+        if (!box) {
+          box = document.createElement('div');
+          box.id = 'nsDiag';
+          box.setAttribute(
+            'style',
+            'position:fixed;left:0;top:0;width:100%;z-index:2147483647;background:rgba(0,0,0,0.85);' +
+              'color:#6f6;font:8px/1.15 monospace;padding:1px;white-space:pre-wrap;pointer-events:none'
+          );
+          (document.body || document.documentElement).appendChild(box);
+        }
+        box.textContent = read();
+      }
+      window.addEventListener('error', function (e) { window.__nsErr = 'js: ' + e.message; });
+      var ticks = 0;
+      var timer = setInterval(function () { paint(); if (++ticks > 20) clearInterval(timer); }, 1000);
+      paint();
+    })();
     """.trimIndent()
