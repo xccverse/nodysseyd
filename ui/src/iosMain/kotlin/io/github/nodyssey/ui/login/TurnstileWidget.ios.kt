@@ -284,9 +284,14 @@ private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: 
         append("'error-callback':function(e){w.__nsErr='cf: '+e;w.")
         append(TURNSTILE_BRIDGE).append(".post('error',String(e||''));}")
         append("});}catch(e){w.__nsErr='render: '+e;}w.__nsRendered=true;};")
-        append("if(!w.__nsRendered&&w.turnstile){w.nsTurnstileReady();}")
         append("}catch(e){window.__nsErr='setup: '+e;}};")
-        append("frame.onload=setup;setTimeout(setup,1500);setTimeout(setup,4000);")
+        // 轮询到 CF 的脚本到位再渲染：只试一两次，慢网络下会白白错过。
+        append("var tries=0;")
+        append("var tick=function(){tries++;setup();var w=frame.contentWindow;")
+        append("if(w&&w.turnstile&&w.__nsWid===undefined&&typeof w.nsTurnstileReady==='function'){")
+        append("try{w.nsTurnstileReady();}catch(e){window.__nsErr='ready: '+e;}}")
+        append("if(tries<18){setTimeout(tick,700);}};")
+        append("frame.onload=setup;setTimeout(tick,700);")
         append("}catch(e){window.__nsErr='inject: '+e;}")
     }
 }
@@ -334,29 +339,66 @@ private val DIAGNOSTIC_SHIM =
     (function () {
       function read() {
         var frame = window.__nsFrame;
-        var inner = null;
-        var inKids = -1;
-        var inFrames = -1;
-        var inSize = 'none';
+        var cw = null;
+        var cdoc = null;
+        var kids = -1;
+        var links = 0;
+        var shadow = 'n';
+        var cfFrame = 0;
+        var cfSize = 'none';
+        var holderSize = 'none';
+        var wid = 'undef';
+        var rdy = 'n';
+        var childErr = '';
         try {
-          if (frame && frame.contentDocument) {
-            inner = frame.contentDocument;
-            inKids = inner.getElementsByTagName('*').length;
-            var cf = inner.getElementsByTagName('iframe');
-            inFrames = cf.length;
+          if (frame && frame.contentWindow) {
+            cw = frame.contentWindow;
+            cdoc = frame.contentDocument;
+          }
+        } catch (e) {
+          holderSize = 'blocked';
+        }
+        try {
+          if (cdoc) {
+            var all = cdoc.getElementsByTagName('*');
+            kids = all.length;
+            for (var k = 0; k < all.length; k++) {
+              if (all[k].shadowRoot) {
+                shadow = 'y';
+                links += all[k].shadowRoot.getElementsByTagName('*').length;
+              }
+            }
+            var cf = cdoc.getElementsByTagName('iframe');
+            cfFrame = cf.length;
             if (cf[0]) {
-              var r = cf[0].getBoundingClientRect();
-              inSize = Math.round(r.width) + 'x' + Math.round(r.height);
+              var r0 = cf[0].getBoundingClientRect();
+              cfSize = Math.round(r0.width) + 'x' + Math.round(r0.height);
+            }
+            var wdiv = cdoc.getElementById('w');
+            if (wdiv) {
+              holderSize = wdiv.offsetWidth + 'x' + wdiv.offsetHeight + '/' + wdiv.innerHTML.length;
             }
           }
         } catch (e) {
-          inSize = 'blocked';
+          holderSize = 'doc: ' + e;
         }
-        return 'rendered=' + (window.__nsRendered ? 'y' : 'n') +
-               ' wid=' + (window.__nsWid === undefined ? 'undef' : String(window.__nsWid)) +
-               ' frames=' + window.frames.length +
-               ' kids=' + inKids + ' cfFrame=' + inFrames + '(' + inSize + ')' +
-               (window.__nsErr ? ' | ERR ' + window.__nsErr : '');
+        try {
+          if (cw) {
+            wid = cw.__nsWid === undefined ? 'undef' : String(cw.__nsWid);
+            rdy = cw.__nsRendered ? 'y' : 'n';
+            childErr = cw.__nsErr || '';
+            if (typeof cw.turnstile === 'undefined' && !childErr) {
+              childErr = 'no-ts';
+            }
+          }
+        } catch (e) {
+          childErr = 'cw: ' + e;
+        }
+        return 'frames=' + window.frames.length + ' kids=' + kids + '(sh=' + shadow + '+' + links + ')' +
+               ' cf=' + cfFrame + '(' + cfSize + ')' +
+               ' w=' + holderSize + ' wid=' + wid + ' rdy=' + rdy +
+               (window.__nsErr ? ' | P ERR ' + window.__nsErr : '') +
+               (childErr ? ' | C ' + childErr : '');
       }
       function paint() {
         var box = document.getElementById('nsDiag');
