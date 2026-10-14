@@ -201,16 +201,21 @@ private class TurnstileHost(
     }
 
     /**
-     * The site's own host, and nothing else — see [isSameSite] for why it is not an equality test.
+     * Main-frame navigations stay on the site's own host; subframes are let through.
      *
-     * The widget's own frame is a subframe load and never reaches here.
+     * The rule exists so this view cannot become a browser, and that is a claim about where the
+     * *top* frame ends up. Applying it to subframes is what cancelled the widget's own frame: a
+     * `blob:` URL has no host at all, so the host test failed, the frame stayed an empty document,
+     * and Cloudflare's script — which lives in that frame — never loaded.
      */
     override fun webView(
         webView: WKWebView,
         decidePolicyForNavigationAction: WKNavigationAction,
         decisionHandler: (WKNavigationActionPolicy) -> Unit,
     ) {
-        val staysOnSite = isSameSite(decidePolicyForNavigationAction.request.URL?.host, siteHost)
+        val isMainFrame = decidePolicyForNavigationAction.targetFrame?.mainFrame ?: true
+        val staysOnSite =
+            !isMainFrame || isSameSite(decidePolicyForNavigationAction.request.URL?.host, siteHost)
         decisionHandler(
             if (staysOnSite) {
                 WKNavigationActionPolicy.WKNavigationActionPolicyAllow
