@@ -257,6 +257,33 @@ class AccountRepository(
     }
 
     /**
+     * 冷启动恢复：库里有快照、系统罐子却是空的 → 把快照装回罐子，验活，死了才静默重登。
+     *
+     * 为什么必须有这一步：安卓的 `CookieManager` 自己落盘，罐子通常不空；iOS 的两个罐子
+     * （`NSHTTPCookieStorage` 与 WebKit 那个）在进程被杀时会丢内容，于是"登录态只活在罐子里"
+     * 在苹果上就表现为**杀掉后台 → 下次打开变成未登录**。快照存在 Room 里，落盘是确定的，
+     * 这个函数就是把那份确定的副本放回罐子。
+     *
+     * 顺序是先装快照、再验活：站点若还认这个 cookie，到验活就结束了，不需要碰登录接口
+     * （`attemptSilentLogin` 没有 Turnstile token 可能被拒，是已知局限；失败就返回 false，
+     * 交给 UI 引导用户自己登）。
+     */
+    suspend fun restoreSessionOnLaunch(): Boolean {
+        return mutex.withLock {
+            if (session.peek().isSignedIn) return@withLock true
+            val activeId = dao.activeAccount()?.accountId ?: return@withLock false
+            val snapshot = dao.session(activeId)?.let { decodeSnapshot(it.cookieSnapshotJson) }.orEmpty()
+            if (snapshot.isNotEmpty()) {
+                cookies.importSessionCookies(snapshot)
+                session.sync()
+            }
+            if (!session.peek().isSignedIn) return@withLock attemptSilentLogin(activeId, session.peek().fingerprint)
+            if (isSessionAlive()) return@withLock true
+            attemptSilentLogin(activeId, session.peek().fingerprint)
+        }
+    }
+
+    /**
      * 静默重登：罐子空了（或快照死了）但 active 还在，且记住了密码，就拿密码调一次登录接口。
      *
      * 给 NodysseyApp 的会话守护调。一轮过期只试一次（[silentAttemptFingerprint]），

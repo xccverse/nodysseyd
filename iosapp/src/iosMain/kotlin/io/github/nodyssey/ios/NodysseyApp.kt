@@ -144,6 +144,19 @@ object NodysseyApp {
         // On screen now: schedule the daily sweep and resume any queue a past run left behind — the
         // iOS counterpart of what the Android `NodysseyApp` does in `onCreate`.
         offlineScheduler.onLaunch()
+        // The account half of that same counterparty, and the piece that was missing: iOS's two
+        // cookie jars lose their contents when the process is killed, and the session lives only in
+        // them — so without refilling from the stored snapshot, "killed from the app switcher" reads
+        // as "signed out" on the next launch. Android never needed this because its `CookieManager`
+        // persists on its own.
+        scope.launch {
+            val accounts = graph.accountRepository
+            accounts.migrateIfNeeded()
+            accounts.restoreSessionOnLaunch()
+            if (graph.sessionRepository.peek().isSignedIn) {
+                accounts.ensureActiveAccount()
+            }
+        }
         return controller
     }
 
