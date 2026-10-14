@@ -12,8 +12,11 @@
 
 - iOS：切换账号、退出登录时同时清空 iOS 上的两套 Cookie 罐（App 请求读的 `NSHTTPCookieStorage` 与登录网页写的 WebKit `WKHTTPCookieStore`），修掉"切完仍停留在旧账号"的问题。
   WebKit 那半只在会话结束时清、不在请求路径上碰：`WKHTTPCookieStore` 只在主队列应答，在 `setCookie` 里顺带写它会拖住发起请求的后台线程（dev.2 如此，表现为一直转圈、每个页面都报网络错误），故已改回只写 `NSHTTPCookieStorage`，并在清理时加了 2 秒上限。
-- iOS：修掉"原生登录不可用，只能改用网页登录"。人机验证（Cloudflare Turnstile）在 iOS 上一直起不来，是因为验证页是用 `loadHTMLString` 塞进 WebView 的——那个文档没有真实来源，而 sitekey 绑定了它允许渲染的主机名，Turnstile 会在画出勾选框之前就拒绝，于是登录按钮恒为禁用。
-  现在先真正导航到站点自己的 https 源，再把同一段验证页 `document.write` 进去（写进去的文档继承来源），iOS 因此也能像安卓那样在 App 内直接输账号密码登录。
+- iOS：修掉"原生登录不可用，只能改用网页登录"。人机验证（Cloudflare Turnstile）在 iOS 上一直起不来，根因有三层，按在真机上找到的顺序：
+  ① 验证页原先是用 `loadHTMLString` 塞进 WebView 的——那个文档没有真实来源，而 sitekey 绑定了它允许渲染的主机名，Turnstile 会在画出勾选框之前就拒绝；
+  ② 改成真正导航到站点 https 源再用 `document.write` 写进去，来源对了，但站点的 CSP 只放行带 nonce 的内联脚本，且"加载之后写出来的文档"里 Cloudflare 后续插入的 `<iframe>` 会静默丢失——表现为拿到了 widgetId、容器里有节点、却始终没有验证框；
+  ③ 把验证页放进 `blob:` 子框架（站点 CSP 本身就有 `frame-src blob:`，子框架是正常解析的文档），并把导航策略从"所有加载都必须是站点主机"放宽为"只有主框架必须是"——`blob:` 地址没有主机名，原先那条规则把验证框自己和 Cloudflare 的 `<iframe>` 一并取消了，这正是 ①② 都改不动的原因。
+  现在 iOS 也能像安卓那样在 App 内直接输账号密码登录。
 
 ## 1.2.23-dev.1 - 2026-10-12
 

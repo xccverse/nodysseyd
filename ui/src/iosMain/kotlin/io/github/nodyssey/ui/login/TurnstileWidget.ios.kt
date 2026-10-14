@@ -56,9 +56,10 @@ import platform.darwin.NSObject
  *    A document written after load is not a document Cloudflare's later insertion can land in. The
  *    markup therefore goes into a `blob:` child frame: a normally-parsed document, still on the
  *    site's origin, and `frame-src blob:` is in the site's own policy.
- *
- * [DIAGNOSTIC_SHIM] is a temporary read-out of the last step above; remove it once the widget is
- * confirmed on real hardware.
+ * 5. That still produced an empty child frame, because the navigation delegate cancelled it: the
+ *    policy below asked "is this the site's host?" of a `blob:` URL, which has no host at all. Both
+ *    the widget's frame and Cloudflare's own `<iframe>` are subframe loads, and the policy that is
+ *    about not letting this view become a browser only ever needed to govern the top frame.
  *
  * Contained the same way the Android actual is: only the site's own host may load, every other
  * main-frame navigation is cancelled, and the page is never handed a URL it can follow out.
@@ -122,8 +123,6 @@ private fun newTurnstileWebView(userAgent: UserAgent, host: TurnstileHost): WKWe
     // The bridge goes into every frame: the widget runs in a child frame, and it is that frame's
     // `window` the callbacks post through.
     controller.addUserScript(userScript(BRIDGE_SHIM, mainFrameOnly = false))
-    // The read-out stays in the top frame, where the strip being looked at is.
-    controller.addUserScript(userScript(DIAGNOSTIC_SHIM, mainFrameOnly = true))
     val configuration = WKWebViewConfiguration()
     configuration.userContentController = controller
     configuration.websiteDataStore = WKWebsiteDataStore.defaultDataStore()
@@ -253,12 +252,14 @@ private class TurnstileHost(
  *    produced by `document.write` after load is not (see the class KDoc, step 4).
  * 3. On load, redefine `nsTurnstileReady` and `nsTurnstileReset` inside that frame rather than
  *    trusting the markup's inline copy, which may or may not have been allowed through. Cloudflare's
- *    loader calls the former by name (`onload=…`), so it has to exist under exactly that name.
+ *    loader calls the former by name (`onload=…`), so it has to exist under exactly that name, and
+ *    the loop keeps trying because that loader arrives asynchronously — a slow network is not a
+ *    failure, it is a later tick.
  * 4. The top frame's `nsTurnstileReset` forwards in, because the reset signal arrives through
  *    `evaluateJavaScript` on the top frame.
  *
- * Everything sits in a `try`, and whatever it throws lands in `__nsErr` — which is what
- * [DIAGNOSTIC_SHIM] paints, so a failure on a device says which one it was.
+ * Everything sits in a `try`, and what it throws lands in the child frame's `__nsErr` — a variable,
+ * not a read-out: nothing is painted, it is there for the next person who has to look.
  */
 private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: Boolean): String {
     val theme = if (darkTheme) "dark" else "light"
@@ -270,7 +271,7 @@ private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: 
         append("var extra='<style>html,body{overflow:visible!important;background:transparent!important}")
         append("#w iframe{width:100%!important;height:65px!important;border:0!important}</style>';")
         append("var h=").append(javaScriptStringLiteral(document)).append("+extra;")
-        append("if(n){h=h.split('<script').join('<script nonce=\"'+n+'\"');}")
+        append("if(n){h=h.split('<script').join('<script nonce=\\\"'+n+'\\\"');}")
         append("var blob=new Blob([h],{type:'text/html'});")
         append("var frame=document.createElement('iframe');")
         append("frame.setAttribute('src',URL.createObjectURL(blob));")
@@ -328,100 +329,4 @@ private val BRIDGE_SHIM =
         window.webkit.messageHandlers.$TURNSTILE_BRIDGE.postMessage({ kind: kind, value: value });
       }
     };
-    """.trimIndent()
-
-/**
- * Temporary: paints what the widget's frame actually contains.
- *
- * The read-out is how this file is debugged on a device — no log reaches a phone only the user is
- * holding, and the file cannot be built off a Mac. It reports the top frame's frame count and size,
- * then reaches into the child frame (same origin, so it can) for the numbers that settle which step
- * of the KDoc is failing: how many elements Cloudflare put there, and whether its own `<iframe>`
- * arrived this time.
- */
-private val DIAGNOSTIC_SHIM =
-    """
-    (function () {
-      function read() {
-        var frame = window.__nsFrame;
-        var cw = null;
-        var cdoc = null;
-        var kids = -1;
-        var links = 0;
-        var shadow = 'n';
-        var cfFrame = 0;
-        var cfSize = 'none';
-        var holderSize = 'none';
-        var wid = 'undef';
-        var rdy = 'n';
-        var childErr = '';
-        try {
-          if (frame && frame.contentWindow) {
-            cw = frame.contentWindow;
-            cdoc = frame.contentDocument;
-          }
-        } catch (e) {
-          holderSize = 'blocked';
-        }
-        try {
-          if (cdoc) {
-            var all = cdoc.getElementsByTagName('*');
-            kids = all.length;
-            for (var k = 0; k < all.length; k++) {
-              if (all[k].shadowRoot) {
-                shadow = 'y';
-                links += all[k].shadowRoot.getElementsByTagName('*').length;
-              }
-            }
-            var cf = cdoc.getElementsByTagName('iframe');
-            cfFrame = cf.length;
-            if (cf[0]) {
-              var r0 = cf[0].getBoundingClientRect();
-              cfSize = Math.round(r0.width) + 'x' + Math.round(r0.height);
-            }
-            var wdiv = cdoc.getElementById('w');
-            if (wdiv) {
-              holderSize = wdiv.offsetWidth + 'x' + wdiv.offsetHeight + '/' + wdiv.innerHTML.length;
-            }
-          }
-        } catch (e) {
-          holderSize = 'doc: ' + e;
-        }
-        try {
-          if (cw) {
-            wid = cw.__nsWid === undefined ? 'undef' : String(cw.__nsWid);
-            rdy = cw.__nsRendered ? 'y' : 'n';
-            childErr = cw.__nsErr || '';
-            if (typeof cw.turnstile === 'undefined' && !childErr) {
-              childErr = 'no-ts';
-            }
-          }
-        } catch (e) {
-          childErr = 'cw: ' + e;
-        }
-        return 'frames=' + window.frames.length + ' kids=' + kids + '(sh=' + shadow + '+' + links + ')' +
-               ' cf=' + cfFrame + '(' + cfSize + ')' +
-               ' w=' + holderSize + ' wid=' + wid + ' rdy=' + rdy +
-               (window.__nsErr ? ' | P ERR ' + window.__nsErr : '') +
-               (childErr ? ' | C ' + childErr : '');
-      }
-      function paint() {
-        var box = document.getElementById('nsDiag');
-        if (!box) {
-          box = document.createElement('div');
-          box.id = 'nsDiag';
-          box.setAttribute(
-            'style',
-            'position:fixed;left:0;top:0;width:100%;z-index:2147483647;background:rgba(0,0,0,0.85);' +
-              'color:#6f6;font:8px/1.15 monospace;padding:1px;white-space:pre-wrap;pointer-events:none'
-          );
-          (document.body || document.documentElement).appendChild(box);
-        }
-        box.textContent = read();
-      }
-      window.addEventListener('error', function (e) { window.__nsErr = 'js: ' + e.message; });
-      var ticks = 0;
-      var timer = setInterval(function () { paint(); if (++ticks > 25) clearInterval(timer); }, 1000);
-      paint();
-    })();
     """.trimIndent()
