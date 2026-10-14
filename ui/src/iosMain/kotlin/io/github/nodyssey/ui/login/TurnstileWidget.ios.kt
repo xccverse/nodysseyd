@@ -267,9 +267,9 @@ private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: 
         append("try{")
         append("var n='';var s=document.getElementsByTagName('script');")
         append("for(var i=0;i<s.length;i++){if(s[i].nonce){n=s[i].nonce;break;}}")
-        // 补一段样式：去掉 overflow 裁剪，并给 CF 的 iframe 一个明确尺寸。
-        append("var extra='<style>html,body{overflow:visible!important;background:transparent!important}")
-        append("#w iframe{width:100%!important;height:65px!important;border:0!important}</style>';")
+        // 只保证能看清、不裁剪；尺寸交给 Cloudflare 自己决定，别用 !important 去塑形。
+        append("var extra='<style>html,body{height:auto!important;overflow:visible!important;background:transparent!important}")
+        append("#w{min-height:0!important;padding:0!important;margin:0!important}</style>';")
         append("var h=").append(javaScriptStringLiteral(document)).append("+extra;")
         append("if(n){h=h.split('<script').join('<script nonce=\\\"'+n+'\\\"');}")
         append("var blob=new Blob([h],{type:'text/html'});")
@@ -278,6 +278,14 @@ private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: 
         append("frame.setAttribute('style','width:100%;height:65px;border:0;display:block;background:transparent');")
         append("document.body.innerHTML='';document.body.appendChild(frame);")
         append("window.__nsFrame=frame;")
+        // 量完再贴身：等 CF 画出真框后，把外层 iframe 收缩到它的实际高宽并居中，
+        // 否则透明区域会露出底色，看上去就是「框比验证码大一圈」。
+        append("var hug=function(){try{var d=frame.contentDocument;if(!d){return;}")
+        append("var cf=d.getElementsByTagName('iframe')[0];if(!cf){return;}")
+        append("var r=cf.getBoundingClientRect();if(!r||!r.height){return;}")
+        append("var hp=Math.ceil(r.height),wp=Math.ceil(r.width);var host=d.getElementById('w');")
+        append("if(host){host.style.minHeight='0';host.style.height=hp+'px';}")
+        append("frame.style.height=hp+'px';if(wp>0){frame.style.width=wp+'px';frame.style.margin='0 auto';}}catch(e){}};")
         append("window.nsTurnstileReset=function(){try{frame.contentWindow.nsTurnstileReset();}catch(e){}};")
         append("var setup=function(){var w=frame.contentWindow;if(!w){return;}try{")
         append("w.nsTurnstileReset=function(){try{w.turnstile.reset();}catch(e){}};")
@@ -293,11 +301,12 @@ private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: 
         append("}catch(e){window.__nsErr='setup: '+e;}};")
         // 轮询到 CF 的脚本到位再渲染：只试一两次，慢网络下会白白错过。
         append("var tries=0;")
-        append("var tick=function(){tries++;setup();var w=frame.contentWindow;")
+        append("var tick=function(){tries++;setup();hug();var w=frame.contentWindow;")
         append("if(w&&w.turnstile&&w.__nsWid===undefined&&typeof w.nsTurnstileReady==='function'){")
         append("try{w.nsTurnstileReady();}catch(e){window.__nsErr='ready: '+e;}}")
         append("if(tries<18){setTimeout(tick,700);}};")
-        append("frame.onload=setup;setTimeout(tick,700);")
+        // 挑战通过后 CF 会重画（换成「成功！」那块），再补两次贴身。
+        append("frame.onload=setup;setTimeout(tick,700);setTimeout(hug,5000);setTimeout(hug,12000);")
         append("}catch(e){window.__nsErr='inject: '+e;}")
     }
 }
