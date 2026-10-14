@@ -4,7 +4,7 @@
     {
       "versionName": "1.2.23-dev.5",
       "tag": "v1.2.23-dev.5",
-      "publishedOn": "2026-10-13",
+      "publishedOn": "2026-10-14",
       "preRelease": true,
       "releaseUrl": "https://github.com/xccverse/nodysseyd/releases/tag/v1.2.23-dev.5",
       "notes": "测试版，由 tag `v1.2.23-dev.5` 构建。不是正式版本，可能不稳定。\n\n\n\n**Full Changelog**: https://github.com/xccverse/nodysseyd/compare/v1.2.23-dev.4...v1.2.23-dev.5"

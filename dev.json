@@ -3,13 +3,13 @@
   "channel": "dev",
   "versionName": "1.2.23-dev.5",
   "tag": "v1.2.23-dev.5",
-  "publishedOn": "2026-10-13",
+  "publishedOn": "2026-10-14",
   "notes": "测试版，由 tag `v1.2.23-dev.5` 构建。不是正式版本，可能不稳定。\n\n\n\n**Full Changelog**: https://github.com/xccverse/nodysseyd/compare/v1.2.23-dev.4...v1.2.23-dev.5",
   "apk": {
     "name": "nodyssey-v1.2.23-dev.5.apk",
     "url": "https://github.com/xccverse/nodysseyd/releases/download/v1.2.23-dev.5/nodyssey-v1.2.23-dev.5.apk",
     "sizeBytes": 6285227,
-    "sha256": "507340bd34ffc5d321bfb2ae26ecae7c11b07d7688754282ee8d9edd27a36f1e"
+    "sha256": "782d7238a4e4755d59af6d70a7f6b45974e945fb0eb8f8b9525c87d31cfaf723"
   },
   "releaseUrl": "https://github.com/xccverse/nodysseyd/releases/tag/v1.2.23-dev.5"
 }
