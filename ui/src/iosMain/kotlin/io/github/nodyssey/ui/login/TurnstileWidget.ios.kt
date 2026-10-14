@@ -267,12 +267,13 @@ private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: 
         append("try{")
         append("var n='';var s=document.getElementsByTagName('script');")
         append("for(var i=0;i<s.length;i++){if(s[i].nonce){n=s[i].nonce;break;}}")
-        // 让验证框和外面给它的框一样大：WebView 多高，白框就多高，上下左右都不留空带。
+        // 尺寸不交给样式表：CF 的盒子可能落在 shadow root 里，而 CSS 选择器穿不过 shadow 边界
+        // （实测：`#w iframe{…!important}` 在真机上不生效，控件仍是 300x65）。样式表只负责
+        // 透明和去滚动条，真正的「铺满」由下面那段 JS 逐元素设 100% —— 它能进 shadow。
         append("var extra='<style>html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;")
         append("overflow:hidden!important;background:transparent!important}")
         append("#w{display:block!important;width:100%!important;height:100%!important;min-height:0!important;")
-        append("padding:0!important;margin:0!important}")
-        append("#w iframe{width:100%!important;height:100%!important;border:0!important;display:block!important}</style>';")
+        append("padding:0!important;margin:0!important;background:transparent!important}</style>';")
         append("var h=").append(javaScriptStringLiteral(document)).append("+extra;")
         append("if(n){h=h.split('<script').join('<script nonce=\\\"'+n+'\\\"');}")
         append("var blob=new Blob([h],{type:'text/html'});")
@@ -281,6 +282,18 @@ private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: 
         append("frame.setAttribute('style','width:100%;height:100%;border:0;display:block;background:transparent');")
         append("document.body.innerHTML='';document.body.appendChild(frame);")
         append("window.__nsFrame=frame;")
+        // 让 CF 画的框铺满外层：逐元素设 100%，并且**钻进 shadow root**（CSS 选择器穿不过去）。
+        append("var fill=function(){try{var d=frame.contentDocument;if(!d){return;}")
+        append("var host=d.getElementById('w');")
+        append("var visit=function(root){var all=root.querySelectorAll('*');")
+        append("for(var i=0;i<all.length;i++){var el=all[i];")
+        append("el.style.width='100%';el.style.maxWidth='none';el.style.boxSizing='border-box';")
+        // 高度只拉 CF 自己那两层包裹（#w 的直接子与孙）加 iframe：再往里动会破坏它的内部排版。
+        append("var p=el.parentElement;")
+        append("if(el.tagName==='IFRAME'||p===host||(p&&p.parentElement===host)){")
+        append("el.style.height='100%';el.style.border='0';el.style.display='block';}")
+        append("if(el.shadowRoot){visit(el.shadowRoot);}}};")
+        append("visit(d);}catch(e){window.__nsErr='fill: '+e;}};")
         append("window.nsTurnstileReset=function(){try{frame.contentWindow.nsTurnstileReset();}catch(e){}};")
         append("var setup=function(){var w=frame.contentWindow;if(!w){return;}try{")
         append("w.nsTurnstileReset=function(){try{w.turnstile.reset();}catch(e){}};")
@@ -296,11 +309,13 @@ private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: 
         append("}catch(e){window.__nsErr='setup: '+e;}};")
         // 轮询到 CF 的脚本到位再渲染：只试一两次，慢网络下会白白错过。
         append("var tries=0;")
-        append("var tick=function(){tries++;setup();var w=frame.contentWindow;")
+        append("var tick=function(){tries++;setup();fill();var w=frame.contentWindow;")
         append("if(w&&w.turnstile&&w.__nsWid===undefined&&typeof w.nsTurnstileReady==='function'){")
         append("try{w.nsTurnstileReady();}catch(e){window.__nsErr='ready: '+e;}}")
         append("if(tries<18){setTimeout(tick,700);}};")
+        // CF 在挑战通过后会重画（换成「成功！」那块），所以再补几次铺满。
         append("frame.onload=setup;setTimeout(tick,700);")
+        append("setTimeout(fill,4000);setTimeout(fill,9000);setTimeout(fill,15000);")
         append("}catch(e){window.__nsErr='inject: '+e;}")
     }
 }
