@@ -8,8 +8,8 @@
   "apk": {
     "name": "nodyssey-v1.2.23-dev.5.apk",
     "url": "https://github.com/xccverse/nodysseyd/releases/download/v1.2.23-dev.5/nodyssey-v1.2.23-dev.5.apk",
-    "sizeBytes": 6285227,
-    "sha256": "98c1d34d83e280e2509cc2147482a88f24b8be6c1a398fcae8dcf97aeab49978"
+    "sizeBytes": 6301611,
+    "sha256": "6a5bea59a2e86ff16710933f658767b6ca234faafbbd4210bc8143f863186142"
   },
   "releaseUrl": "https://github.com/xccverse/nodysseyd/releases/tag/v1.2.23-dev.5"
 }
