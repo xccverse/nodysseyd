@@ -15,7 +15,6 @@ import io.github.nodyssey.data.composer.PostComposerRepository
 import io.github.nodyssey.data.composer.PostDraft
 import io.github.nodyssey.data.composer.PostSubmission
 import io.github.nodyssey.data.doubles.session.FakeAccountDao
-import io.github.nodyssey.data.doubles.session.FakeSessionCookieStore
 import io.github.nodyssey.data.local.AccountEntity
 import io.github.nodyssey.data.local.AccountSessionEntity
 import io.github.nodyssey.data.local.ActiveAccountEntity
