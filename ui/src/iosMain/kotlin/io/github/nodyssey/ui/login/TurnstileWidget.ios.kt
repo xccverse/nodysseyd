@@ -249,7 +249,11 @@ private fun widgetInjectionScript(document: String, sitekey: String, darkTheme: 
         append("try{")
         append("var n='';var s=document.getElementsByTagName('script');")
         append("for(var i=0;i<s.length;i++){if(s[i].nonce){n=s[i].nonce;break;}}")
-        append("var h=").append(javaScriptStringLiteral(document)).append(";")
+        // 文档末尾补一段样式：去掉 overflow 裁剪，并给 CF 的 iframe 一个明确尺寸 —— 兜住
+        // "组件建出来了但被裁剪/零高度"这一类不可见。
+        append("var extra='<style>html,body{overflow:visible!important}")
+        append("#w iframe{width:100%!important;height:65px!important;border:0!important}</style>';")
+        append("var h=").append(javaScriptStringLiteral(document)).append("+extra;")
         append("if(n){h=h.split('<script').join('<script nonce=\"'+n+'\"');}")
         append("document.open();document.write(h);document.close();")
         append(BRIDGE_SHIM)
@@ -315,13 +319,32 @@ private val DIAGNOSTIC_SHIM =
     (function () {
       function read() {
         var scripts = document.getElementsByTagName('script');
-        var nonce = false;
-        for (var i = 0; i < scripts.length; i++) { if (scripts[i].nonce) { nonce = true; break; } }
-        return 'url=' + location.host + location.pathname + ' | ' +
-               'ts=' + (typeof turnstile) + ' ready=' + (typeof window.nsTurnstileReady) +
-               ' rendered=' + (window.__nsRendered ? 'y' : 'n') +
+        var holder = document.getElementById('w');
+        var kids = 0;
+        var shadow = 'n';
+        if (holder) {
+          kids = holder.getElementsByTagName('*').length;
+          for (var j = 0; j < holder.children.length; j++) {
+            var root = holder.children[j].shadowRoot;
+            if (root) {
+              shadow = 'y';
+              kids += root.getElementsByTagName('*').length;
+            }
+          }
+        }
+        var frm = document.getElementsByTagName('iframe').length;
+        var ifr = document.getElementsByTagName('iframe')[0];
+        var size = 'none';
+        if (ifr) {
+          var r = ifr.getBoundingClientRect();
+          size = Math.round(r.width) + 'x' + Math.round(r.height);
+        }
+        return 'rendered=' + (window.__nsRendered ? 'y' : 'n') +
                ' wid=' + (window.__nsWid === undefined ? 'undef' : String(window.__nsWid)) +
-               ' frames=' + document.getElementsByTagName('iframe').length +
+               ' frm=' + frm + '(' + size + ')' +
+               ' kids=' + kids + ' sh=' + shadow +
+               ' w=' + (holder ? holder.offsetWidth + 'x' + holder.offsetHeight : '-') +
+               ' len=' + (holder ? holder.innerHTML.length : -1) +
                (window.__nsErr ? ' | ERR ' + window.__nsErr : '');
       }
       function paint() {
