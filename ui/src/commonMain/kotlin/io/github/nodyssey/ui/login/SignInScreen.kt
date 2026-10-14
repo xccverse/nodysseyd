@@ -2,6 +2,7 @@ package io.github.nodyssey.ui.login
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
@@ -215,7 +217,7 @@ fun SignInRoute(
                         onToken = viewModel::onVerified,
                         onExpired = viewModel::onVerificationExpired,
                         onUnavailable = viewModel::onVerificationUnavailable,
-                        modifier = Modifier.fillMaxWidth().height(TURNSTILE_HEIGHT_DP.dp),
+                        modifier = Modifier.width(TURNSTILE_WIDTH_DP.dp).height(TURNSTILE_HEIGHT_DP.dp),
                     )
                 },
             )
@@ -508,8 +510,8 @@ private fun PasswordSupport(state: SignInUiState, onForgotPassword: () -> Unit) 
  *
  * No container of its own. Cloudflare's widget already draws a bordered, filled box with its own
  * checkbox, wording and branding, so the board's strip *is* the widget once there is one — framing
- * it again put a box inside a box. What is left here is layout: the widget at full width, and a
- * line under it only when the app has something to add that the widget does not already say.
+ * it again put a box inside a box. What is left here is layout: the widget at its own size, centred,
+ * and a line under it only when the app has something to add that the widget does not already say.
  *
  * The widget stays mounted once it is up, [VerificationState.Passed] included. Unmounting it would
  * destroy the web view and its script, and the very next thing that happens after a refusal is that
@@ -524,7 +526,11 @@ private fun VerificationBlock(verification: VerificationState, turnstile: @Compo
         if (verification is VerificationState.NotWired) {
             VerificationNotice(Icons.Default.Info, stringResource(Res.string.sign_in_verify_not_wired))
         } else {
-            turnstile()
+            // 居中放，别再铺满整行：Cloudflare 的控件是固定尺寸（真机实测 300x65），铺满只会
+            // 在它四周留下比它更大的空位 —— 那看着就是「外框比验证框大」。
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                turnstile()
+            }
             when (verification) {
                 VerificationState.Expired ->
                     VerificationNotice(

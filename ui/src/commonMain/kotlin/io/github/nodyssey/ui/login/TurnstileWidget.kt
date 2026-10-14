@@ -107,5 +107,13 @@ internal fun dispatchTurnstileMessage(
 /** The name the page calls the host object by. */
 internal const val TURNSTILE_BRIDGE = "__nsBridge"
 
-/** Roughly the widget's own drawn height (65 CSS px), plus room for its focus ring. */
-internal const val TURNSTILE_HEIGHT_DP = 72
+/**
+ * The widget's own drawn size, straight off a device read-out (`cf=1(300x65)`).
+ *
+ * Matching it exactly is the point: the strip used to be full width and 72dp tall, which left a
+ * larger area around a fixed-size widget — that is the "the box is bigger than the verification box"
+ * that gets reported. Nothing here can make Cloudflare's widget bigger; the only lever is making the
+ * area around it the same size it is.
+ */
+internal const val TURNSTILE_WIDTH_DP = 300
+internal const val TURNSTILE_HEIGHT_DP = 65
