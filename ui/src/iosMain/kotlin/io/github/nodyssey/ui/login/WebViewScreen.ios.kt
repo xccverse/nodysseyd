@@ -116,6 +116,8 @@ actual fun WebViewRoute(
                     // Stopped first, so no observer pass can start behind the one being awaited.
                     bridge.stop()
                     bridge.drain()
+                    delay(500)
+                    bridge.drain()
                 } finally {
                     // Publishing happens here and nowhere else, exactly as on Android: the feed reload
                     // lands after this screen is gone rather than while a challenge is still being
