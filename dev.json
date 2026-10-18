@@ -1,15 +1,15 @@
 {
   "schema": 1,
   "channel": "dev",
-  "versionName": "1.2.23-dev.5",
-  "tag": "v1.2.23-dev.5",
-  "publishedOn": "2026-10-14",
-  "notes": "测试版，由 tag `v1.2.23-dev.5` 构建。不是正式版本，可能不稳定。\n\n### 修复\n\n- iOS：修掉\"原生登录不可用，只能改用网页登录\"。人机验证（Cloudflare Turnstile）在 iOS 上一直起不来，根因有三层，按在真机上找到的顺序：\n  ① 验证页原先是用 `loadHTMLString` 塞进 WebView 的——那个文档没有真实来源，而 sitekey 绑定了它允许渲染的主机名，Turnstile 会在画出勾选框之前就拒绝；\n  ② 改成真正导航到站点 https 源再用 `document.write` 写进去，来源对了，但站点的 CSP 只放行带 nonce 的内联脚本，且\"加载之后写出来的文档\"里 Cloudflare 后续插入的 `<iframe>` 会静默丢失——表现为拿到了 widgetId、容器里有节点、却始终没有验证框；\n  ③ 把验证页放进 `blob:` 子框架（站点 CSP 本身就有 `frame-src blob:`，子框架是正常解析的文档），并把导航策略从\"所有加载都必须是站点主机\"放宽为\"只有主框架必须是\"——`blob:` 地址没有主机名，原先那条规则把验证框自己和 Cloudflare 的 `<iframe>` 一并取消了，这正是 ①② 都改不动的原因。\n  现在 iOS 也能像安卓那样在 App 内直接输账号密码登录。\n\n**Full Changelog**: https://github.com/xccverse/nodysseyd/compare/v1.2.23-dev.4...v1.2.23-dev.5",
+  "versionName": "1.2.23-dev.6",
+  "tag": "v1.2.23-dev.6",
+  "publishedOn": "2026-10-18",
+  "notes": "测试版，由 tag `v1.2.23-dev.6` 构建。不是正式版本，可能不稳定。\n\n### 新增\n\n- 首页/版块列表记住滚动位置：切后台、退出列表或杀进程时，记住当时屏幕最下面那条帖子（\"读到这里\"）；下次进来在它上面画一条\"上次看到这里\"的线。锚点取的是最下面那条往上一条，所以线下方还留着两条帖子。按版块和排序分别记。\n\n**Full Changelog**: https://github.com/xccverse/nodysseyd/compare/v1.2.23-dev.5...v1.2.23-dev.6",
   "apk": {
-    "name": "nodyssey-v1.2.23-dev.5.apk",
-    "url": "https://github.com/xccverse/nodysseyd/releases/download/v1.2.23-dev.5/nodyssey-v1.2.23-dev.5.apk",
-    "sizeBytes": 6301611,
-    "sha256": "6a5bea59a2e86ff16710933f658767b6ca234faafbbd4210bc8143f863186142"
+    "name": "nodyssey-v1.2.23-dev.6.apk",
+    "url": "https://github.com/xccverse/nodysseyd/releases/download/v1.2.23-dev.6/nodyssey-v1.2.23-dev.6.apk",
+    "sizeBytes": 6301615,
+    "sha256": "6ed11e4ea8cf2c93a1d60a0092f2341e0478d3f38938e897f8ef4dc59a19c3ad"
   },
-  "releaseUrl": "https://github.com/xccverse/nodysseyd/releases/tag/v1.2.23-dev.5"
+  "releaseUrl": "https://github.com/xccverse/nodysseyd/releases/tag/v1.2.23-dev.6"
 }
