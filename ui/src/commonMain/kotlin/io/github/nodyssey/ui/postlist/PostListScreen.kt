@@ -1682,10 +1682,10 @@ internal fun previewFeed(): Flow<PagingData<FeedPost>> =
  * 1 = 线紧贴在屏幕最下面那条帖子上方，线下方只剩那一条（旧行为）；
  * 2 = 锚点往上挪一条，下次进来线下方还看得见两条帖子。
  */
-private const val PostsBelowLastPosition = 2
+private const val POSTS_BELOW_LAST_POSITION = 2
 
 /**
- * 记住哪一条帖子：[lastVisibleIndex]（列表最后一条可见项）往上数 [PostsBelowLastPosition] 条。
+ * 记住哪一条帖子：[lastVisibleIndex]（列表最后一条可见项）往上数 [POSTS_BELOW_LAST_POSITION] 条。
  *
  * 那条可见项可能是追加 spinner，落在 [itemCount] 之外，所以先夹回最后一条帖子；
  * 列表里还没有帖子时返回 null —— 没有可记的位置，也就没有线可画。
@@ -1694,7 +1694,7 @@ internal fun lastPositionAnchor(lastVisibleIndex: Int?, itemCount: Int): Int? {
     if (lastVisibleIndex == null || itemCount <= 0) return null
     val lastPost = lastVisibleIndex.coerceAtMost(itemCount - 1)
     if (lastPost < 0) return null
-    return (lastPost - (PostsBelowLastPosition - 1)).coerceAtLeast(0)
+    return (lastPost - (POSTS_BELOW_LAST_POSITION - 1)).coerceAtLeast(0)
 }
 
 /**
