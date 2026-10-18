@@ -288,7 +288,8 @@ class PostListViewModel(
     /**
      * 记住当前位置。切后台、退出列表时调 —— 下次进来画线用。
      *
-     * 记的是屏幕最下面那条帖子："读到这里"，线画在它上面。
+     * 记的是屏幕最下面那条帖子往上一条（见 `lastPositionAnchor`）：线画在它上面，
+     * 下面留着两条帖子，回来时那两条还在线的下方看得见。
      */
     fun saveScrollPosition(postId: Long) {
         val slug = _uiState.value.categorySlug

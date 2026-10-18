@@ -734,15 +734,14 @@ private fun BoardFeed(
     val appendState = posts.loadState.append
     val showSkeleton = posts.itemCount == 0 && refreshState is LoadState.Loading
 
-    // 当前屏幕最下面那条帖子的 ID —— "读到这里"的标记点。
+    // "读到这里"的锚点帖子 ID —— 线画在它上面。
     // 用 layoutInfo 而不用 firstVisibleItemIndex：要的是底部。
     var bottomPostId by remember { mutableStateOf<Long?>(null) }
     LaunchedEffect(listState, posts) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
             .collect { index ->
-                if (index != null && index < posts.itemCount) {
-                    bottomPostId = posts.peek(index)?.summary?.postId
-                }
+                val anchor = lastPositionAnchor(index, posts.itemCount) ?: return@collect
+                posts.peek(anchor)?.summary?.postId?.let { bottomPostId = it }
             }
     }
 
@@ -1676,6 +1675,27 @@ internal fun previewFeed(): Flow<PagingData<FeedPost>> =
             ),
         ),
     )
+
+/**
+ * 线下面留几条帖子。
+ *
+ * 1 = 线紧贴在屏幕最下面那条帖子上方，线下方只剩那一条（旧行为）；
+ * 2 = 锚点往上挪一条，下次进来线下方还看得见两条帖子。
+ */
+private const val PostsBelowLastPosition = 2
+
+/**
+ * 记住哪一条帖子：[lastVisibleIndex]（列表最后一条可见项）往上数 [PostsBelowLastPosition] 条。
+ *
+ * 那条可见项可能是追加 spinner，落在 [itemCount] 之外，所以先夹回最后一条帖子；
+ * 列表里还没有帖子时返回 null —— 没有可记的位置，也就没有线可画。
+ */
+internal fun lastPositionAnchor(lastVisibleIndex: Int?, itemCount: Int): Int? {
+    if (lastVisibleIndex == null || itemCount <= 0) return null
+    val lastPost = lastVisibleIndex.coerceAtMost(itemCount - 1)
+    if (lastPost < 0) return null
+    return (lastPost - (PostsBelowLastPosition - 1)).coerceAtLeast(0)
+}
 
 /**
  * "上次看到这里"分隔线：画在记住的那条帖子上面。
